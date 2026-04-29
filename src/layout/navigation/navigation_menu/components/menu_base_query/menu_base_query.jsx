@@ -1,6 +1,5 @@
 import { useContext, For } from "solid-js";
-import { QueryContext } from "@/query/store.js";
-import { onBase } from "@/store/store.js";
+import { QueryContext, onBase } from "@/query/store.js";
 import styles from "./menu_base_query.module.css";
 
 export function MenuBaseQuery(props) {

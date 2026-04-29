@@ -1,6 +1,5 @@
 import { describe, expect, test, afterEach, vi } from "vitest";
 import {
-  updateSearchParams,
   onRecordSave,
   onRecordWipe,
   onSearch,
@@ -8,6 +7,7 @@ import {
   onRecordCreate,
 } from "@/store/store.js";
 import {
+  updateSearchParams,
   getSpoilerOpen,
   setSpoilerOpen,
   onRecordEdit,

@@ -2,7 +2,7 @@ import { createElementSize } from "@solid-primitives/resize-observer";
 import { useContext, createSignal, createEffect } from "solid-js";
 import { useApi } from "@/context.js";
 import { QueryContext, onRecordEdit } from "@/query/store.js";
-import { onRecordWipe, onMindOpen, onExport } from "@/store/store.js";
+import { onRecordWipe, onMindOpen } from "@/store/store.js";
 import { Confirmation, Spoiler } from "@/layout/components/index.js";
 import { OverviewRecord } from "../index.js";
 import styles from "./overview_item_full.module.css";
@@ -72,12 +72,6 @@ export function OverviewItemFull(props) {
             onAction={() => onRecordWipe(api, props.item)}
             onCancel={() => setShowActions(false)}
           />
-
-          <Show when={canOpenMind} fallback={<></>}>
-            <button title="zip" onClick={() => onExport(api, props.item.mind)}>
-              export{" "}
-            </button>
-          </Show>
 
           <Show when={canOpenMind} fallback={<></>}>
             <button

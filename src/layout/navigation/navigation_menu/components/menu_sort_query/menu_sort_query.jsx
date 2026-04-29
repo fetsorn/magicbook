@@ -1,6 +1,5 @@
 import { useContext, For } from "solid-js";
-import { QueryContext } from "@/query/store.js";
-import { onSort } from "@/store/store.js";
+import { QueryContext, onSort } from "@/query/store.js";
 import styles from "./menu_sort_query.module.css";
 
 export function MenuSortQuery(props) {

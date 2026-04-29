@@ -2,7 +2,7 @@ import parser from "search-query-parser";
 import diff from "microdiff";
 import { createContext } from "solid-js";
 import { createStore, produce } from "solid-js/store";
-import { sortCallback } from "@/query/pure.js";
+import { sortCallback, changeSearchParams, makeURL } from "@/query/pure.js";
 
 export const QueryContext = createContext();
 
@@ -163,7 +163,7 @@ export async function onSearchBar(searchBar) {
 
   // no longer do search on change of search bar
   //if (doSearch) {
-  //  await onSearch(api)
+  //  await onSearch()
   //}
 }
 
@@ -181,4 +181,87 @@ export function getSearchBar() {
     }, {});
 
   return parser.stringify(searchBar, options);
+}
+
+export function updateSearchParams(field, value) {
+  // NOTE freeform text is not supported by csvs yet
+  if (field !== "text") {
+    const searchParams = changeSearchParams(
+      new URLSearchParams(queryStore.searchParams),
+      field,
+      value,
+    );
+
+    const url = makeURL(searchParams, queryStore.mind.mind);
+
+    window.history.replaceState(null, null, url);
+
+    // do not reset searchParams here to preserve focus on filter
+    setQueryStore(
+      produce((state) => {
+        state.searchParams = searchParams.toString();
+      }),
+    );
+
+    return true;
+  }
+
+  return false;
+}
+
+// diff changes to queryStore.searchParams
+function batchUpdateSearchParams(changes) {
+  // only search if some field was updated
+  // don't search on freeform text
+  let doSearch = false;
+
+  changes
+    .filter((c) => c.path[0] !== "exclude" && c.path[0] !== "offsets")
+    .forEach((change) => {
+      switch (change.type) {
+        case "REMOVE": {
+          const field = change.path[0];
+
+          doSearch = doSearch ? doSearch : updateSearchParams(field, undefined);
+
+          break;
+        }
+        case "CREATE": {
+          const field = change.path[0];
+
+          doSearch = doSearch
+            ? doSearch
+            : updateSearchParams(field, change.value);
+
+          break;
+        }
+        case "CHANGE": {
+          const field = change.path[0];
+
+          doSearch = doSearch
+            ? doSearch
+            : updateSearchParams(field, change.value);
+
+          break;
+        }
+      }
+    });
+
+  return doSearch;
+}
+
+export async function onBase(value) {
+  updateSearchParams("_", value);
+
+  //await onSearch()
+}
+
+export async function onSort(field, value) {
+  updateSearchParams(field, value);
+
+  setQueryStore(
+    produce((state) => {
+      state.recordSet = getSortedRecords();
+    }),
+  );
 }

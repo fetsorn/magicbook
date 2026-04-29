@@ -13,16 +13,6 @@ import {
 
 /**
  * This
- * @name exportMind
- * @export function
- * @param {String} mind
- */
-export async function exportMind(api, mind) {
-  await api.zip(mind);
-}
-
-/**
- * This
  * @name sync
  * @export function
  * @param {String} mind
