@@ -1,22 +1,20 @@
 import { describe, expect, test, afterEach, vi } from "vitest";
 import {
-  store,
   updateSearchParams,
-  setStore,
   getSortedRecords,
   getFilterQueries,
   getFilterOptions,
-  onRecordEdit,
-  onRecordCreate,
   onRecordSave,
   onRecordWipe,
   onSearch,
   onMindChange,
   appendRecord,
-  getSpoilerOpen,
-  setSpoilerOpen,
+  onRecordCreate,
 } from "@/store/store.js";
-import { changeSearchParams, makeURL } from "@/store/pure.js";
+import { getSpoilerOpen, setSpoilerOpen, onRecordEdit } from "@/query/store.js";
+import { queryStore, setQueryStore } from "@/query/store.js";
+import { proxyStore, setProxyStore } from "@/proxy/store.js";
+import { changeSearchParams, makeURL } from "@/query/pure.js";
 import { createRecord, selectStream } from "@/store/impure.js";
 import { saveRecord, wipeRecord, changeMind } from "@/store/action.js";
 import schemaRoot from "@/store/default_root_schema.json";
@@ -42,7 +40,7 @@ vi.mock("@/store/impure.js", async (importOriginal) => {
   };
 });
 
-vi.mock("@/store/pure.js", async (importOriginal) => {
+vi.mock("@/query/pure.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {
@@ -56,7 +54,8 @@ describe("store", () => {
   // restore after, not before
   // to keep initial state
   afterEach(() => {
-    setStore(undefined);
+    setQueryStore(undefined);
+    setProxyStore(undefined);
 
     changeSearchParams.mockReset();
     makeURL.mockReset();
@@ -66,13 +65,15 @@ describe("store", () => {
     wipeRecord.mockReset();
     changeMind.mockReset();
 
-    setStore({
-      abortPreviousStream: () => {},
+    setQueryStore({
       searchParams: new URLSearchParams("_=mind"),
-      mind: { _: "mind", mind: "root", name: "minds" },
       schema: schemaRoot,
       record: undefined,
       recordSet: [],
+    });
+    setProxyStore({
+      abortPreviousStream: () => {},
+      mind: { _: "mind", mind: "root", name: "minds" },
     });
   });
 
@@ -80,7 +81,7 @@ describe("store", () => {
     test("", async () => {
       await onRecordEdit(["record"], 1);
 
-      expect(store.record).toStrictEqual(1);
+      expect(queryStore.record).toStrictEqual(1);
     });
   });
 
@@ -92,7 +93,7 @@ describe("store", () => {
 
       expect(createRecord).toHaveBeenCalledWith("root", "mind");
 
-      expect(store.record).toStrictEqual(1);
+      expect(queryStore.record).toStrictEqual(1);
     });
   });
 
@@ -104,7 +105,7 @@ describe("store", () => {
 
       expect(saveRecord).toHaveBeenCalledWith({}, "root", "mind", [], {}, {});
 
-      expect(store.recordSet).toStrictEqual(1);
+      expect(queryStore.recordSet).toStrictEqual(1);
     });
   });
 
@@ -116,7 +117,7 @@ describe("store", () => {
 
       expect(wipeRecord).toHaveBeenCalledWith({}, "root", "mind", [], {});
 
-      expect(store.recordSet).toStrictEqual(1);
+      expect(queryStore.recordSet).toStrictEqual(1);
     });
   });
 
@@ -124,7 +125,7 @@ describe("store", () => {
     test("", async () => {
       appendRecord({});
 
-      expect(store.recordSet).toStrictEqual([{}]);
+      expect(queryStore.recordSet).toStrictEqual([{}]);
     });
   });
 
@@ -142,7 +143,7 @@ describe("store", () => {
 
       await updateSearchParams(field, value);
 
-      expect(store.searchParams.toString()).toStrictEqual("1");
+      expect(queryStore.searchParams.toString()).toStrictEqual("1");
 
       expect(window.history.replaceState).toHaveBeenCalledWith(null, null, 2);
     });
@@ -160,7 +161,7 @@ describe("store", () => {
 
       await updateSearchParams(field, value);
 
-      expect(store.searchParams).toBe("1");
+      expect(queryStore.searchParams).toBe("1");
 
       // TODO actually check that it ignores
     });
@@ -177,13 +178,13 @@ describe("store", () => {
 
       await onSearch();
 
-      expect(store.recordSet).toStrictEqual([]);
+      expect(queryStore.recordSet).toStrictEqual([]);
 
       expect(startStream).toHaveBeenCalled();
 
       expect(selectStream).toHaveBeenCalled();
 
-      expect(store.abortPreviousStream()()).toBe(3);
+      expect(proxyStore.abortPreviousStream()()).toBe(3);
     });
   });
 
@@ -203,11 +204,11 @@ describe("store", () => {
 
       await onMindChange("/", "_=mind");
 
-      expect(store.mind).toStrictEqual(mind);
+      expect(proxyStore.mind).toStrictEqual(mind);
 
-      expect(store.schema).toStrictEqual(2);
+      expect(queryStore.schema).toStrictEqual(2);
 
-      expect(store.searchParams).toStrictEqual("3");
+      expect(queryStore.searchParams).toStrictEqual("3");
     });
   });
 
@@ -217,7 +218,7 @@ describe("store", () => {
     });
 
     test("gets true", async () => {
-      setStore("spoilerMap", "a", true);
+      setQueryStore("spoilerMap", "a", true);
 
       expect(getSpoilerOpen("a")).toBe(true);
     });
@@ -225,11 +226,11 @@ describe("store", () => {
 
   describe("setSpoilerOpen", () => {
     test("sets true", async () => {
-      setStore("spoilerMap", "a", false);
+      setQueryStore("spoilerMap", "a", false);
 
       setSpoilerOpen("a", true);
 
-      expect(store.spoilerMap["a"]).toBe(true);
+      expect(queryStore.spoilerMap["a"]).toBe(true);
     });
   });
 
@@ -239,9 +240,9 @@ describe("store", () => {
 
       const record2 = { _: "mind", mind: "id2" };
 
-      setStore("recordSet", [record1, record2]);
+      setQueryStore("recordSet", [record1, record2]);
 
-      setStore(
+      setQueryStore(
         "searchParams",
         new URLSearchParams(".sortBy=mind&.sortDirection=first"),
       );
@@ -254,9 +255,9 @@ describe("store", () => {
 
       const record2 = { _: "mind", mind: "id2" };
 
-      setStore("recordSet", [record1, record2]);
+      setQueryStore("recordSet", [record1, record2]);
 
-      setStore(
+      setQueryStore(
         "searchParams",
         new URLSearchParams(".sortBy=mind&.sortDirection=last"),
       );

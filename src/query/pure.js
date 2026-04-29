@@ -1,6 +1,50 @@
 import { sow, mow, sortNestingDescending } from "@fetsorn/csvs-js";
 
 /**
+ * This picks default sortBy from task === "date" of schema
+ * @name pickDefaultSortBy
+ * @function
+ * @param {object} schema -
+ * @param {String} base -
+ * @returns {String}
+ */
+export function pickDefaultSortBy(schema, base) {
+  if (!schema.hasOwnProperty(base)) throw Error("schema does not have base");
+
+  const date = schema[base].leaves.find((leaf) => schema[leaf].task === "date");
+
+  const sortBy = date ?? base;
+
+  return sortBy;
+}
+
+/**
+ * This picks default base from a root branch of schema
+ * @name getDefaultBase
+ * @function
+ * @param {object} schema -
+ * @returns {String}
+ */
+export function getDefaultBase(schema) {
+  if (Object.keys(schema) === 0) throw Error("schema empty");
+
+  // return some branch of schema
+  const roots = Object.keys(schema).filter(
+    (b) => b !== "branch" && schema[b].trunks.length == 0,
+  );
+
+  const base = roots.reduce((withRoot, root) => {
+    if (schema[root].leaves.length > schema[withRoot].leaves.length) {
+      return root;
+    } else {
+      return withRoot;
+    }
+  }, roots[0]);
+
+  return base;
+}
+
+/**
  * This returns a query string from a csvs query
  * @name queryToSearchParams
  * @export function
@@ -422,50 +466,6 @@ export function makeURL(searchParams, mind) {
   const url = `${pathname}?${queryString}`;
 
   return url;
-}
-
-/**
- * This picks default base from a root branch of schema
- * @name getDefaultBase
- * @function
- * @param {object} schema -
- * @returns {String}
- */
-export function getDefaultBase(schema) {
-  if (Object.keys(schema) === 0) throw Error("schema empty");
-
-  // return some branch of schema
-  const roots = Object.keys(schema).filter(
-    (b) => b !== "branch" && schema[b].trunks.length == 0,
-  );
-
-  const base = roots.reduce((withRoot, root) => {
-    if (schema[root].leaves.length > schema[withRoot].leaves.length) {
-      return root;
-    } else {
-      return withRoot;
-    }
-  }, roots[0]);
-
-  return base;
-}
-
-/**
- * This picks default sortBy from task === "date" of schema
- * @name pickDefaultSortBy
- * @function
- * @param {object} schema -
- * @param {String} base -
- * @returns {String}
- */
-export function pickDefaultSortBy(schema, base) {
-  if (!schema.hasOwnProperty(base)) throw Error("schema does not have base");
-
-  const date = schema[base].leaves.find((leaf) => schema[leaf].task === "date");
-
-  const sortBy = date ?? base;
-
-  return sortBy;
 }
 
 /**

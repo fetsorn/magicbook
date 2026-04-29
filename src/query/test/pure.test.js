@@ -12,7 +12,7 @@ import {
   getDefaultBase,
   pickDefaultSortBy,
   findFirstSortBy,
-} from "@/store/pure.js";
+} from "@/query/pure.js";
 import stub from "./stub.js";
 
 describe("queryToSearchParams", () => {

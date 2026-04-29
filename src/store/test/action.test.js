@@ -2,11 +2,11 @@ import { describe, expect, beforeEach, test, vi } from "vitest";
 import { saveRecord, wipeRecord, changeMind } from "@/store/action.js";
 import { deleteRecord } from "@/store/record.js";
 import { updateRecord } from "@/store/impure.js";
-import { find, clone } from "@/store/open.js";
+import { find, clone } from "@/proxy/open.js";
 import schemaRoot from "@/store/default_root_schema.json";
 import stub from "./stub.js";
 
-vi.mock("@/store/pure.js", async (importOriginal) => {
+vi.mock("@/query/pure.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {
@@ -16,7 +16,7 @@ vi.mock("@/store/pure.js", async (importOriginal) => {
   };
 });
 
-vi.mock("@/store/open.js", async (importOriginal) => {
+vi.mock("@/proxy/open.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {

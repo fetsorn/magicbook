@@ -1,4 +1,4 @@
-import { searchParamsToQuery } from "@/store/pure.js";
+import { searchParamsToQuery } from "@/query/pure.js";
 import {
   newUUID,
   updateMind,
@@ -30,32 +30,6 @@ export async function updateRecord(api, mind, base, recordNew) {
   } else {
     await updateEntry(api, mind, recordNew);
   }
-}
-
-/**
- * This
- * @name createRecord
- * @function
- * @param {object} mind -
- * @param {String} base -
- * @returns {object}
- */
-export async function createRecord(mind, base) {
-  const isHomeScreen = mind === "root";
-
-  const isMindBranch = base === "mind";
-
-  const isMindRecord = isHomeScreen && isMindBranch;
-
-  const mindPartial = isMindRecord ? defaultMindRecord : {};
-
-  const record = {
-    _: base,
-    [base]: await newUUID(),
-    ...mindPartial,
-  };
-
-  return record;
 }
 
 /**
@@ -145,4 +119,30 @@ export async function buildRecord(api, mind, record) {
   const recordNew = isHomeScreen ? await loadMindRecord(api, fetched) : fetched;
 
   return recordNew;
+}
+
+/**
+ * This
+ * @name createRecord
+ * @function
+ * @param {object} mind -
+ * @param {String} base -
+ * @returns {object}
+ */
+export async function createRecord(mind, base) {
+  const isHomeScreen = mind === "root";
+
+  const isMindBranch = base === "mind";
+
+  const isMindRecord = isHomeScreen && isMindBranch;
+
+  const mindPartial = isMindRecord ? defaultMindRecord : {};
+
+  const record = {
+    _: base,
+    [base]: await newUUID(),
+    ...mindPartial,
+  };
+
+  return record;
 }

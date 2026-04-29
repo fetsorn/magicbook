@@ -1,4 +1,4 @@
-import { enrichBranchRecords, schemaToBranchRecords } from "@/store/pure.js";
+import { enrichBranchRecords, schemaToBranchRecords } from "@/query/pure.js";
 import {
   newUUID,
   readSchema,

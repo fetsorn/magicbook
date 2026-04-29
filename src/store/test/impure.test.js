@@ -10,7 +10,7 @@ import {
 import defaultMindRecord from "@/store/default_mind_record.json";
 import stub from "./stub.js";
 
-vi.mock("@/store/pure.js", async (importOriginal) => {
+vi.mock("@/query/pure.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {
@@ -22,7 +22,7 @@ vi.mock("@/store/pure.js", async (importOriginal) => {
   };
 });
 
-vi.mock("@/store/open.js", async (importOriginal) => {
+vi.mock("@/proxy/open.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {

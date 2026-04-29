@@ -16,11 +16,11 @@ import {
   writeRemoteTags,
   writeLocalTags,
 } from "@/store/tags.js";
-import { schemaToBranchRecords } from "@/store/pure.js";
+import { schemaToBranchRecords } from "@/query/pure.js";
 import schemaRoot from "@/store/default_root_schema.json";
 import stub from "./stub.js";
 
-vi.mock("@/store/pure.js", async (importOriginal) => {
+vi.mock("@/query/pure.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {

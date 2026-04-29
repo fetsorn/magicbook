@@ -1,45 +1,28 @@
 /* try to keep store interactions only in this file */
-import { createContext } from "solid-js";
 import parser from "search-query-parser";
 import diff from "microdiff";
-import { getDefaultBase } from "@/store/pure.js";
-import { createStore, produce } from "solid-js/store";
-import { createRecord, selectStream, buildRecord } from "@/store/impure.js";
+import { getDefaultBase } from "@/query/pure.js";
+import { produce } from "solid-js/store";
+import { selectStream, buildRecord, createRecord } from "@/store/impure.js";
 import { resolve, createRoot, readSchema, exportMind } from "@/store/record.js";
 import { saveRecord, wipeRecord, changeMind } from "@/store/action.js";
-import { sortCallback, changeSearchParams, makeURL } from "@/store/pure.js";
+import { sortCallback, changeSearchParams, makeURL } from "@/query/pure.js";
 import schemaRoot from "@/store/default_root_schema.json";
-
-export const StoreContext = createContext();
-
-export const [store, setStore] = createStore({
-  abortPreviousStream: async () => {},
-  searchParams: "_=mind", // sets the state of search bar
-  mind: { _: "mind", mind: "root", name: "minds" },
-  schema: schemaRoot,
-  record: undefined,
-  recordSet: [],
-  recordMap: {},
-  spoilerMap: {},
-  loading: false,
-  searchBar: "", // remembers the last state of search bar
-  mergeResult: false,
-  syncError: undefined,
-  streamCounter: 0,
-});
+import { proxyStore, setProxyStore } from "../proxy/store.js";
+import { queryStore, setQueryStore } from "../query/store.js";
 
 export async function getRecord(api, record) {
   const base = getBase();
 
   const grain = { _: base, [base]: record };
 
-  if (store.recordMap[record] === undefined) {
-    const recordNew = await buildRecord(api, store.mind.mind, grain);
+  if (queryStore.recordMap[record] === undefined) {
+    const recordNew = await buildRecord(api, proxyStore.mind.mind, grain);
 
-    setStore("recordMap", { [record]: recordNew });
+    setQueryStore("recordMap", { [record]: recordNew });
   }
 
-  const recordNew = store.recordMap[record];
+  const recordNew = queryStore.recordMap[record];
 
   return recordNew;
 }
@@ -51,13 +34,15 @@ export async function getRecord(api, record) {
  * @returns {Function}
  */
 export function getSortedRecords() {
-  const sortBy = new URLSearchParams(store.searchParams).get(".sortBy");
+  const sortBy = new URLSearchParams(queryStore.searchParams).get(".sortBy");
 
-  const sortDirection = new URLSearchParams(store.searchParams).get(
+  const sortDirection = new URLSearchParams(queryStore.searchParams).get(
     ".sortDirection",
   );
 
-  const records = store.recordSet.toSorted(sortCallback(sortBy, sortDirection));
+  const records = queryStore.recordSet.toSorted(
+    sortCallback(sortBy, sortDirection),
+  );
 
   return records;
 }
@@ -69,12 +54,12 @@ export function getSortedRecords() {
  * @returns {String[]}
  */
 export function getFilterQueries() {
-  if (store.searchParams === undefined) return [];
+  if (queryStore.searchParams === undefined) return [];
 
   // convert entries iterator to array for Index
-  return Array.from(new URLSearchParams(store.searchParams).entries()).filter(
-    ([key]) => key !== ".sortDirection",
-  );
+  return Array.from(
+    new URLSearchParams(queryStore.searchParams).entries(),
+  ).filter(([key]) => key !== ".sortDirection");
 }
 
 /**
@@ -84,16 +69,20 @@ export function getFilterQueries() {
  * @returns {String[]}
  */
 export function getFilterOptions() {
-  if (store.schema === undefined || store.searchParams === undefined) return [];
+  if (queryStore.schema === undefined || queryStore.searchParams === undefined)
+    return [];
 
   // find all fields name
-  const leafFields = store.schema[
-    new URLSearchParams(store.searchParams).get("_")
-  ].leaves.concat([new URLSearchParams(store.searchParams).get("_"), "__"]);
+  const leafFields = queryStore.schema[
+    new URLSearchParams(queryStore.searchParams).get("_")
+  ].leaves.concat([
+    new URLSearchParams(queryStore.searchParams).get("_"),
+    "__",
+  ]);
 
   // find field name which is added to filter search params
   const addedFields = Array.from(
-    new URLSearchParams(store.searchParams).keys(),
+    new URLSearchParams(queryStore.searchParams).keys(),
   );
 
   // find name fields which is not added to filter search params
@@ -104,77 +93,27 @@ export function getFilterOptions() {
 
 /**
  * This
- * @name getSpoilerOpen
- * @param {String} index -
- * @export function
- */
-export function getSpoilerOpen(index) {
-  return store.spoilerMap[index];
-}
-
-/**
- * This
- * @name setSpoilerOpen
- * @param {String} index -
- * @param {boolean} isOpen -
- * @export function
- */
-export function setSpoilerOpen(index, isOpen) {
-  setStore("spoilerMap", { [index]: isOpen });
-}
-
-/**
- * This
- * @name onRecordCreate
- * @export function
- */
-export async function onRecordCreate(api) {
-  const record = await createRecord(
-    store.mind.mind,
-    new URLSearchParams(store.searchParams).get("_"),
-  );
-
-  setStore(
-    produce((state) => {
-      state.record = record;
-    }),
-  );
-}
-
-/**
- * This
- * @name onRecordEdit
- * @export function
- * @param {String[]} path -
- * @param {String} value -
- */
-export function onRecordEdit(path, value) {
-  setStore(...path, value);
-}
-
-/**
- * This
  * @name onRecordSave
  * @export function
  * @param {object} recordOld -
  * @param {object} recordNew -
  */
 export async function onRecordSave(api, recordOld, recordNew) {
-  setStore("loading", true);
+  setQueryStore("loading", true);
 
   const records = await saveRecord(
     api,
-    store.mind.mind,
-    new URLSearchParams(store.searchParams).get("_"),
-    store.recordSet,
+    proxyStore.mind.mind,
+    new URLSearchParams(queryStore.searchParams).get("_"),
+    queryStore.recordSet,
     recordOld,
     recordNew,
   );
 
   try {
-    const syncResult = await resolve(api, store.mind.mind);
+    const syncResult = await resolve(api, proxyStore.mind.mind);
 
-    setStore(
+    setProxyStore(
       produce((state) => {
         state.mergeResult = syncResult.ok;
         state.syncError = undefined;
@@ -183,24 +122,24 @@ export async function onRecordSave(api, recordOld, recordNew) {
   } catch (e) {
     // sync is best-effort after local save — surface but don't throw
     console.error("sync after save failed:", e);
-    setStore("syncError", e?.message ?? String(e));
+    setQueryStore("syncError", e?.message ?? String(e));
   }
 
   const keyNew = recordNew[recordNew._];
 
   // force reload
-  setStore("recordSet", []);
+  setQueryStore("recordSet", []);
 
-  setStore("recordMap", { [keyNew]: recordNew });
+  setQueryStore("recordMap", { [keyNew]: recordNew });
 
-  setStore(
+  setQueryStore(
     produce((state) => {
       state.recordSet = records;
       state.record = undefined;
     }),
   );
 
-  setStore("loading", false);
+  setQueryStore("loading", false);
 }
 
 /**
@@ -210,20 +149,20 @@ export async function onRecordSave(api, recordOld, recordNew) {
  * @param {object} record -
  */
 export async function onRecordWipe(api, record) {
-  setStore("loading", true);
+  setQueryStore("loading", true);
 
   const records = await wipeRecord(
     api,
-    store.mind.mind,
-    new URLSearchParams(store.searchParams).get("_"),
-    store.recordSet,
+    proxyStore.mind.mind,
+    new URLSearchParams(queryStore.searchParams).get("_"),
+    queryStore.recordSet,
     record,
   );
 
   try {
-    const syncResult = await resolve(api, store.mind.mind);
+    const syncResult = await resolve(api, proxyStore.mind.mind);
 
-    setStore(
+    setProxyStore(
       produce((state) => {
         state.mergeResult = syncResult.ok;
         state.syncError = undefined;
@@ -232,17 +171,17 @@ export async function onRecordWipe(api, record) {
   } catch (e) {
     // sync is best-effort after local delete — surface but don't fail
     console.error("sync after delete failed:", e);
-    setStore("syncError", e?.message ?? String(e));
+    setProxyStore("syncError", e?.message ?? String(e));
   }
 
-  setStore(
+  setQueryStore(
     produce((state) => {
       state.recordSet = records;
       state.recordMap[record] = undefined;
     }),
   );
 
-  setStore("loading", false);
+  setQueryStore("loading", false);
 }
 
 /**
@@ -252,21 +191,7 @@ export async function onRecordWipe(api, record) {
  * @param {object} record -
  */
 export function appendRecord(record) {
-  setStore("recordSet", store.recordSet.length, record);
-}
-
-export async function onSort(field, value) {
-  updateSearchParams(field, value);
-
-  setStore(
-    produce((state) => {
-      state.recordSet = getSortedRecords();
-    }),
-  );
-}
-
-export function getBase() {
-  return new URLSearchParams(store.searchParams).get("_");
+  setQueryStore("recordSet", queryStore.recordSet.length, record);
 }
 
 export async function onBase(value) {
@@ -276,9 +201,9 @@ export async function onBase(value) {
 }
 
 export async function onCancel() {
-  await store.abortPreviousStream();
+  await proxyStore.abortPreviousStream();
 
-  setStore("loading", false);
+  setQueryStore("loading", false);
 }
 
 /**
@@ -287,20 +212,20 @@ export async function onCancel() {
  * @export function
  */
 export async function onSearch(api) {
-  setStore("loading", true);
+  setQueryStore("loading", true);
 
-  setStore("streamCounter", store.streamCounter + 1);
+  setProxyStore("streamCounter", queryStore.streamCounter + 1);
 
   try {
     // if search bar can be parsed as url, clone
-    const url = new URL(store.searchBar);
+    const url = new URL(queryStore.searchBar);
 
     if (url.protocol === "http:" || url.protocol === "https:") {
       const searchString = url.hash.replace("#", "");
 
       // reset searchbar to avoid a loop
       // after onMindChange calls onSearch
-      setStore(
+      setQueryStore(
         produce((state) => {
           state.searchBar = "";
         }),
@@ -308,7 +233,7 @@ export async function onSearch(api) {
 
       await onMindChange(api, "/", searchString);
 
-      setStore("loading", false);
+      setQueryStore("loading", false);
 
       return undefined;
     }
@@ -317,7 +242,10 @@ export async function onSearch(api) {
     // do nothing
   }
 
-  const url = makeURL(new URLSearchParams(store.searchParams), store.mind.mind);
+  const url = makeURL(
+    new URLSearchParams(queryStore.searchParams),
+    proxyStore.mind.mind,
+  );
 
   window.history.replaceState(null, null, url);
 
@@ -325,22 +253,27 @@ export async function onSearch(api) {
   try {
     const { abortPreviousStream, startStream } = await selectStream(
       api,
-      store.schema,
-      store.mind.mind,
+      queryStore.schema,
+      proxyStore.mind.mind,
       appendRecord,
-      new URLSearchParams(store.searchParams),
-      store.streamCounter,
+      new URLSearchParams(queryStore.searchParams),
+      proxyStore.streamCounter,
     );
 
     // stop previous stream
-    await store.abortPreviousStream();
+    await proxyStore.abortPreviousStream();
 
-    setStore(
+    setProxyStore(
       produce((state) => {
         // solid store tries to call the function, so pass a factory here
         state.abortPreviousStream = () => () => {
           return abortPreviousStream();
         };
+      }),
+    );
+
+    setQueryStore(
+      produce((state) => {
         // erase existing records
         state.recordSet = [];
       }),
@@ -350,13 +283,13 @@ export async function onSearch(api) {
     await startStream();
 
     // TODO does it stop main?
-    for (const record of store.recordSet) {
+    for (const record of queryStore.recordSet) {
       await getRecord(api, record);
     }
   } catch (e) {
     console.error(e);
 
-    setStore(
+    setQueryStore(
       produce((state) => {
         // erase existing records
         state.recordSet = [];
@@ -364,7 +297,7 @@ export async function onSearch(api) {
     );
   }
 
-  const scroll = new URLSearchParams(store.searchParams).get(".scroll");
+  const scroll = new URLSearchParams(queryStore.searchParams).get(".scroll");
 
   if (scroll !== null) {
     // SEC-16: null-check before calling scrollIntoView
@@ -375,7 +308,7 @@ export async function onSearch(api) {
     }
   }
 
-  setStore("loading", false);
+  setQueryStore("loading", false);
 }
 
 /**
@@ -387,10 +320,10 @@ export async function onSearch(api) {
  */
 export async function onMindChange(api, pathname, searchString) {
   // try to stop the stream before changing minds
-  await store.abortPreviousStream();
+  await proxyStore.abortPreviousStream();
 
   // TODO somewhere here in case of error doesn't change url to root
-  setStore(
+  setQueryStore(
     produce((state) => {
       // this updates the overview on change of params
       // and removes focus from the filter
@@ -417,7 +350,7 @@ export async function onMindChange(api, pathname, searchString) {
   try {
     const syncResult = await resolve(api, mind.mind);
 
-    setStore(
+    setProxyStore(
       produce((state) => {
         state.mergeResult = syncResult.ok;
         state.syncError = undefined;
@@ -426,18 +359,23 @@ export async function onMindChange(api, pathname, searchString) {
   } catch (e) {
     // sync is best-effort on navigation — surface but don't fail
     console.error("sync on mind change failed:", e);
-    setStore("syncError", e?.message ?? String(e));
+    setProxyStore("syncError", e?.message ?? String(e));
   }
 
-  setStore(
+  setProxyStore(
     produce((state) => {
       state.mind = mind;
+    }),
+  );
+
+  setQueryStore(
+    produce((state) => {
       state.schema = schema;
       state.searchParams = searchParams.toString();
     }),
   );
 
-  const url = makeURL(searchParams, store.mind.mind);
+  const url = makeURL(searchParams, proxyStore.mind.mind);
 
   window.history.replaceState(null, null, url);
 
@@ -459,7 +397,11 @@ export async function onMindChange(api, pathname, searchString) {
 export async function leapfrog(branch, value, cognate) {
   await onSearch(api, undefined, undefined);
 
-  await onSearch(api, "_", new URLSearchParams(store.searchParams).get("_"));
+  await onSearch(
+    api,
+    "_",
+    new URLSearchParams(queryStore.searchParams).get("_"),
+  );
 
   await onSearch(api, "__", cognate);
 
@@ -511,11 +453,11 @@ export async function sidestep(branch, value, cognate) {
 export async function warp(branch, value, cognate) {
   await onSearch(api, undefined, undefined);
 
-  await onSearch(api, "_", store.schema[cognate].trunks[0]);
+  await onSearch(api, "_", queryStore.schema[cognate].trunks[0]);
 
   await onSearch(api, "__", cognate);
 
-  await onSearch(api, store.schema[cognate].trunks[0], value);
+  await onSearch(api, queryStore.schema[cognate].trunks[0], value);
 }
 
 /**
@@ -524,28 +466,28 @@ export async function warp(branch, value, cognate) {
  * @export function
  */
 export async function onStartup(api) {
-  setStore("loading", true);
+  setQueryStore("loading", true);
 
   await createRoot(api);
 
-  setStore("loading", false);
+  setQueryStore("loading", false);
 }
 
 export function updateSearchParams(field, value) {
   // NOTE freeform text is not supported by csvs yet
   if (field !== "text") {
     const searchParams = changeSearchParams(
-      new URLSearchParams(store.searchParams),
+      new URLSearchParams(queryStore.searchParams),
       field,
       value,
     );
 
-    const url = makeURL(searchParams, store.mind.mind);
+    const url = makeURL(searchParams, proxyStore.mind.mind);
 
     window.history.replaceState(null, null, url);
 
     // do not reset searchParams here to preserve focus on filter
-    setStore(
+    setQueryStore(
       produce((state) => {
         state.searchParams = searchParams.toString();
       }),
@@ -557,7 +499,7 @@ export function updateSearchParams(field, value) {
   return false;
 }
 
-// diff changes to store.searchParams
+// diff changes to queryStore.searchParams
 function batchUpdateSearchParams(changes) {
   // only search if some field was updated
   // don't search on freeform text
@@ -599,10 +541,10 @@ function batchUpdateSearchParams(changes) {
 }
 
 export function getSearchBar() {
-  const searchParams = new URLSearchParams(store.searchParams);
+  const searchParams = new URLSearchParams(queryStore.searchParams);
 
   const options = {
-    keywords: Object.keys(store.schema),
+    keywords: Object.keys(queryStore.schema),
   };
 
   const searchBar = Array.from(searchParams.entries())
@@ -615,14 +557,14 @@ export function getSearchBar() {
 }
 
 export async function onSearchBar(searchBar) {
-  setStore(
+  setQueryStore(
     produce((state) => {
       state.searchBar = searchBar;
     }),
   );
 
   const options = {
-    keywords: Object.keys(store.schema),
+    keywords: Object.keys(queryStore.schema),
   };
 
   function objectize(q) {
@@ -662,15 +604,33 @@ export async function onMindOpen(api, mind) {
 }
 
 export async function onExport(api, mind) {
-  setStore("loading", true);
+  setQueryStore("loading", true);
 
   try {
     await exportMind(api, mind);
-    setStore("syncError", undefined);
+    setProxyStore("syncError", undefined);
   } catch (e) {
     console.error("export failed:", e);
-    setStore("syncError", e?.message ?? String(e));
+    setProxyStore("syncError", e?.message ?? String(e));
   }
 
-  setStore("loading", false);
+  setQueryStore("loading", false);
+}
+
+/**
+ * This
+ * @name onRecordCreate
+ * @export function
+ */
+export async function onRecordCreate() {
+  const record = await createRecord(
+    proxyStore.mind.mind,
+    new URLSearchParams(queryStore.searchParams).get("_"),
+  );
+
+  setQueryStore(
+    produce((state) => {
+      state.record = record;
+    }),
+  );
 }

@@ -1,57 +1,7 @@
 import { updateRecord } from "@/store/impure.js";
 import { deleteRecord } from "@/store/record.js";
-import { getDefaultBase, pickDefaultSortBy } from "@/store/pure.js";
-import { find, clone } from "@/store/open.js";
-
-/**
- * This
- * @name saveRecord
- * @function
- * @param {String} mind -
- * @param {String} base -
- * @param {object[]} records -
- * @param {object} recordOld -
- * @param {object} recordNew -
- * @returns {object[]}
- */
-export async function saveRecord(
-  api,
-  mind,
-  base,
-  records,
-  recordOld,
-  recordNew,
-) {
-  await updateRecord(api, mind, base, recordNew);
-
-  const keyOld = recordOld[base];
-
-  const keyNew = recordNew[base];
-
-  const recordsNew = records.filter((r) => r !== keyOld).concat([keyNew]);
-
-  return recordsNew;
-}
-
-/**
- * This
- * @name wipeRecord
- * @function
- * @param {object} mind -
- * @param {String} base -
- * @param {object[]} records -
- * @param {object} record -
- * @returns {object[]}
- */
-export async function wipeRecord(api, mind, base, records, record) {
-  await deleteRecord(api, mind, record);
-
-  const key = record[base];
-
-  const recordsNew = records.filter((r) => r !== key);
-
-  return recordsNew;
-}
+import { find, clone } from "@/proxy/open.js";
+import { getDefaultBase, pickDefaultSortBy } from "@/query/pure.js";
 
 /**
  * This
@@ -101,4 +51,54 @@ export async function changeMind(api, pathname, searchString) {
     schema,
     searchParams,
   };
+}
+
+/**
+ * This
+ * @name saveRecord
+ * @function
+ * @param {String} mind -
+ * @param {String} base -
+ * @param {object[]} records -
+ * @param {object} recordOld -
+ * @param {object} recordNew -
+ * @returns {object[]}
+ */
+export async function saveRecord(
+  api,
+  mind,
+  base,
+  records,
+  recordOld,
+  recordNew,
+) {
+  await updateRecord(api, mind, base, recordNew);
+
+  const keyOld = recordOld[base];
+
+  const keyNew = recordNew[base];
+
+  const recordsNew = records.filter((r) => r !== keyOld).concat([keyNew]);
+
+  return recordsNew;
+}
+
+/**
+ * This
+ * @name wipeRecord
+ * @function
+ * @param {object} mind -
+ * @param {String} base -
+ * @param {object[]} records -
+ * @param {object} record -
+ * @returns {object[]}
+ */
+export async function wipeRecord(api, mind, base, records, record) {
+  await deleteRecord(api, mind, record);
+
+  const key = record[base];
+
+  const recordsNew = records.filter((r) => r !== key);
+
+  return recordsNew;
 }
