@@ -74,10 +74,10 @@ describe("store", () => {
       schema: schemaRoot,
       record: undefined,
       recordSet: [],
+      mind: { _: "mind", mind: "root", name: "minds" },
     });
     setProxyStore({
       abortPreviousStream: () => {},
-      mind: { _: "mind", mind: "root", name: "minds" },
     });
   });
 
@@ -224,7 +224,7 @@ describe("store", () => {
 
       await onMindChange(api, "/", "_=mind");
 
-      expect(proxyStore.mind).toStrictEqual(mind);
+      expect(queryStore.mind).toStrictEqual(mind);
 
       expect(queryStore.schema).toStrictEqual(2);
 

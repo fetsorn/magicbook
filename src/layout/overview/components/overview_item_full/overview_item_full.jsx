@@ -2,7 +2,6 @@ import { createElementSize } from "@solid-primitives/resize-observer";
 import { useContext, createSignal, createEffect } from "solid-js";
 import { useApi } from "@/context.js";
 import { QueryContext, onRecordEdit } from "@/query/store.js";
-import { ProxyContext } from "@/proxy/store.js";
 import { onRecordWipe, onMindOpen, onExport } from "@/store/store.js";
 import { Confirmation, Spoiler } from "@/layout/components/index.js";
 import { OverviewRecord } from "../index.js";
@@ -10,7 +9,6 @@ import styles from "./overview_item_full.module.css";
 
 export function OverviewItemFull(props) {
   const { store: queryStore } = useContext(QueryContext);
-  const { store: proxyStore } = useContext(ProxyContext);
 
   const api = useApi();
 
@@ -24,7 +22,7 @@ export function OverviewItemFull(props) {
 
   const [isFold, setIsFold] = createSignal(true);
 
-  const isHomeScreen = proxyStore.mind.mind === "root";
+  const isHomeScreen = queryStore.mind.mind === "root";
 
   const isMind =
     new URLSearchParams(queryStore.searchParams).get("_") === "mind";

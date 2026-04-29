@@ -23,7 +23,7 @@ export async function getRecord(api, record) {
   const grain = { _: base, [base]: record };
 
   if (queryStore.recordMap[record] === undefined) {
-    const recordNew = await buildRecord(api, proxyStore.mind.mind, grain);
+    const recordNew = await buildRecord(api, queryStore.mind.mind, grain);
 
     setQueryStore("recordMap", { [record]: recordNew });
   }
@@ -45,7 +45,7 @@ export async function onRecordSave(api, recordOld, recordNew) {
 
   const records = await saveRecord(
     api,
-    proxyStore.mind.mind,
+    queryStore.mind.mind,
     new URLSearchParams(queryStore.searchParams).get("_"),
     queryStore.recordSet,
     recordOld,
@@ -53,7 +53,7 @@ export async function onRecordSave(api, recordOld, recordNew) {
   );
 
   try {
-    const syncResult = await resolve(api, proxyStore.mind.mind);
+    const syncResult = await resolve(api, queryStore.mind.mind);
 
     setProxyStore(
       produce((state) => {
@@ -95,14 +95,14 @@ export async function onRecordWipe(api, record) {
 
   const records = await wipeRecord(
     api,
-    proxyStore.mind.mind,
+    queryStore.mind.mind,
     new URLSearchParams(queryStore.searchParams).get("_"),
     queryStore.recordSet,
     record,
   );
 
   try {
-    const syncResult = await resolve(api, proxyStore.mind.mind);
+    const syncResult = await resolve(api, queryStore.mind.mind);
 
     setProxyStore(
       produce((state) => {
@@ -170,7 +170,7 @@ export async function onSearch(api) {
 
   const url = makeURL(
     new URLSearchParams(queryStore.searchParams),
-    proxyStore.mind.mind,
+    queryStore.mind.mind,
   );
 
   window.history.replaceState(null, null, url);
@@ -180,7 +180,7 @@ export async function onSearch(api) {
     const { abortPreviousStream, startStream } = await selectStream(
       api,
       queryStore.schema,
-      proxyStore.mind.mind,
+      queryStore.mind.mind,
       appendRecord,
       new URLSearchParams(queryStore.searchParams),
       proxyStore.streamCounter,
@@ -288,20 +288,15 @@ export async function onMindChange(api, pathname, searchString) {
     setProxyStore("syncError", e?.message ?? String(e));
   }
 
-  setProxyStore(
-    produce((state) => {
-      state.mind = mind;
-    }),
-  );
-
   setQueryStore(
     produce((state) => {
+      state.mind = mind;
       state.schema = schema;
       state.searchParams = searchParams.toString();
     }),
   );
 
-  const url = makeURL(searchParams, proxyStore.mind.mind);
+  const url = makeURL(searchParams, queryStore.mind.mind);
 
   window.history.replaceState(null, null, url);
 
@@ -465,7 +460,7 @@ export function updateSearchParams(field, value) {
       value,
     );
 
-    const url = makeURL(searchParams, proxyStore.mind.mind);
+    const url = makeURL(searchParams, queryStore.mind.mind);
 
     window.history.replaceState(null, null, url);
 
@@ -511,7 +506,7 @@ export async function onExport(api, mind) {
  */
 export async function onRecordCreate() {
   const record = await createRecord(
-    proxyStore.mind.mind,
+    queryStore.mind.mind,
     new URLSearchParams(queryStore.searchParams).get("_"),
   );
 

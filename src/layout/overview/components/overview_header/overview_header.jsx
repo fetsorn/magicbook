@@ -1,8 +1,8 @@
 import { useContext } from "solid-js";
-import { ProxyContext } from "@/proxy/store.js";
+import { QueryContext } from "@/query/store.js";
 
 export function OverviewHeader() {
-  const { store } = useContext(ProxyContext);
+  const { store } = useContext(QueryContext);
 
   function capitalize(str) {
     if (str.length === 0) return undefined;

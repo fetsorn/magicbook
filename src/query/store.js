@@ -9,6 +9,7 @@ export const QueryContext = createContext();
 export const [queryStore, setQueryStore] = createStore({
   searchParams: "_=mind", // sets the state of search bar
   schema: {}, // TODO set schemaRoot somehow
+  mind: { _: "mind", mind: "root", name: "minds" },
   record: undefined,
   recordSet: [],
   recordMap: {},

@@ -1,7 +1,7 @@
 import { describe, test, expect, vi } from "vitest";
 import { userEvent } from "@vitest/browser/context";
 import { render } from "@solidjs/testing-library";
-import { ProxyContext, proxyStore, setProxyStore } from "@/proxy/store.js";
+import { QueryContext, queryStore, setQueryStore } from "@/query/store.js";
 import { ApiProvider } from "@/context.js";
 import { onStartup } from "@/store/store.js";
 import { NavigationBack } from "./navigation_back.jsx";
@@ -13,17 +13,19 @@ describe("NavigationBack", () => {
       csvsinit: vi.fn(),
       updateRecord: vi.fn,
       commit: vi.fn(),
+      getOrigin: vi.fn(),
+      selectStream: vi.fn(),
     };
 
     await onStartup(api);
 
-    setProxyStore("mind", { _: "mind", mind: "somemind" });
+    setQueryStore("mind", { _: "mind", mind: "somemind" });
 
     const { getByText } = render(() => (
       <ApiProvider value={api}>
-        <ProxyContext.Provider value={{ store: proxyStore }}>
+        <QueryContext.Provider value={{ store: queryStore }}>
           <NavigationBack />
-        </ProxyContext.Provider>
+        </QueryContext.Provider>
       </ApiProvider>
     ));
 
@@ -33,6 +35,6 @@ describe("NavigationBack", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    expect(proxyStore.mind).toEqual({ _: "mind", mind: "root", name: "minds" });
+    expect(queryStore.mind).toEqual({ _: "mind", mind: "root", name: "minds" });
   });
 });

@@ -109,7 +109,7 @@ export function App() {
     <ProxyContext.Provider value={{ store: proxyStore }}>
       <QueryContext.Provider value={{ store: queryStore }}>
         <MetaProvider>
-          <Title>{"evenor – " + proxyStore.mind.name}</Title>
+          <Title>{"evenor – " + queryStore.mind.name}</Title>
         </MetaProvider>
 
         <main className={styles.main}>
