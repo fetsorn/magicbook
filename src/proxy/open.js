@@ -3,9 +3,9 @@ import {
   schemaToBranchRecords,
   digestMessage,
 } from "@/query/pure.js";
-import { readSchema, updateMind } from "@/store/record.js";
+import { readSchema } from "@/store/record.js";
 import { newUUID } from "@/query/record.js";
-import { saveMindRecord } from "@/proxy/record.js";
+import { saveMindRecord, updateMind } from "@/proxy/record.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
 
 /**

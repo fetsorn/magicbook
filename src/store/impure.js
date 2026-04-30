@@ -1,6 +1,10 @@
 import { searchParamsToQuery } from "@/query/pure.js";
-import { updateMind, updateEntry } from "@/store/record.js";
-import { saveMindRecord, loadMindRecord } from "@/proxy/record.js";
+import {
+  saveMindRecord,
+  loadMindRecord,
+  updateMind,
+  updateEntry,
+} from "@/proxy/record.js";
 import defaultMindRecord from "@/proxy/default_mind_record.json";
 
 /**

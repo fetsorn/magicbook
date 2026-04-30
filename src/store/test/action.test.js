@@ -1,6 +1,6 @@
 import { describe, expect, beforeEach, test, vi } from "vitest";
 import { saveRecord, wipeRecord, changeMind } from "@/store/action.js";
-import { deleteRecord } from "@/store/record.js";
+import { deleteRecord } from "@/proxy/record.js";
 import { updateRecord } from "@/store/impure.js";
 import { find, clone } from "@/proxy/open.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
@@ -26,7 +26,7 @@ vi.mock("@/proxy/open.js", async (importOriginal) => {
   };
 });
 
-vi.mock("@/store/record.js", async (importOriginal) => {
+vi.mock("@/proxy/record.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {
