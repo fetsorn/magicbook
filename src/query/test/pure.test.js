@@ -1,12 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
   ensureTrunk,
+  recordsToSchema,
   queryToSearchParams,
   searchParamsToQuery,
-  enrichBranchRecords,
-  extractSchemaRecords,
-  schemaToBranchRecords,
-  recordsToSchema,
   changeSearchParams,
   makeURL,
   getDefaultBase,
@@ -136,48 +133,6 @@ describe("searchParamsToQuery", () => {
   });
 });
 
-describe("enrichBranchRecords", () => {
-  test("enriches", () => {
-    const testCase = stub.cases.trunk;
-
-    expect(
-      enrichBranchRecords(testCase.schemaRecord, testCase.metaRecords),
-    ).toStrictEqual(testCase.branchRecords);
-  });
-});
-
-describe("extractSchemaRecords", () => {
-  test("extracts", () => {
-    const testCase = stub.cases.trunk;
-
-    expect(extractSchemaRecords(testCase.branchRecords)).toStrictEqual([
-      testCase.schemaRecord,
-      ...testCase.metaRecords,
-    ]);
-  });
-});
-
-describe("schemaToBranchRecords", () => {
-  test("converts", () => {
-    const testCase = stub.cases.description;
-
-    expect(schemaToBranchRecords(testCase.schema)).toStrictEqual([
-      testCase.schemaRecord,
-      ...testCase.metaRecords,
-    ]);
-  });
-});
-
-describe("recordsToSchema", () => {
-  test("converts", () => {
-    const testCase = stub.cases.description;
-
-    expect(
-      recordsToSchema(testCase.schemaRecord, testCase.metaRecords),
-    ).toStrictEqual(testCase.schema);
-  });
-});
-
 describe("changeSearchParams", () => {
   test("ignores empty field", () => {
     expect(
@@ -253,5 +208,15 @@ describe("pickDefaultSortBy", () => {
 describe("findFirstSortBy", () => {
   test("", () => {
     expect(findFirstSortBy("a", { _: "a", a: "b" })).toBe("b");
+  });
+});
+
+describe("recordsToSchema", () => {
+  test("converts", () => {
+    const testCase = stub.cases.description;
+
+    expect(
+      recordsToSchema(testCase.schemaRecord, testCase.metaRecords),
+    ).toStrictEqual(testCase.schema);
   });
 });

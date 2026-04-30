@@ -1,10 +1,20 @@
 import { describe, expect, beforeEach, test, vi } from "vitest";
 import { saveRecord, wipeRecord, changeMind } from "@/store/action.js";
+import { readSchema } from "@/store/record.js";
 import { deleteRecord } from "@/proxy/record.js";
 import { updateRecord } from "@/proxy/impure.js";
 import { find, clone } from "@/proxy/open.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
 import stub from "./stub.js";
+
+vi.mock("@/store/record.js", async (importOriginal) => {
+  const mod = await importOriginal();
+
+  return {
+    ...mod,
+    readSchema: vi.fn(() => schemaRoot),
+  };
+});
 
 vi.mock("@/query/pure.js", async (importOriginal) => {
   const mod = await importOriginal();
@@ -65,8 +75,10 @@ describe("saveRecord", () => {
 
     const recordNew = { _: "b", b: "id2", c: "2" };
 
+    const api = { select: vi.fn(() => [recordOld]) };
+
     const recordsNew = await saveRecord(
-      {},
+      api,
       mind,
       base,
       records,
@@ -74,7 +86,7 @@ describe("saveRecord", () => {
       recordNew,
     );
 
-    expect(updateRecord).toHaveBeenCalledWith({}, mind, base, recordNew);
+    expect(updateRecord).toHaveBeenCalledWith(api, mind, base, recordNew);
 
     expect(recordsNew).toStrictEqual([recordNew.b]);
   });
@@ -90,9 +102,11 @@ describe("wipeRecord", () => {
 
     const records = [record.b];
 
-    const recordsNew = await wipeRecord({}, mind, base, records, record);
+    const api = { select: vi.fn(() => [record]) };
 
-    expect(deleteRecord).toHaveBeenCalledWith({}, mind, record);
+    const recordsNew = await wipeRecord(api, mind, base, records, record);
+
+    expect(deleteRecord).toHaveBeenCalledWith(api, mind, record);
 
     expect(recordsNew).toStrictEqual([]);
   });
@@ -107,9 +121,11 @@ describe("changeMind", () => {
   test("find root", async () => {
     find.mockImplementation(() => ({ mind: 1, schema: schemaRoot }));
 
-    const { mind, schema, searchParams } = await changeMind({}, "/", "_=mind");
+    const api = {};
 
-    expect(find).toHaveBeenCalledWith({}, "root", undefined);
+    const { mind, schema, searchParams } = await changeMind(api, "/", "_=mind");
+
+    expect(find).toHaveBeenCalledWith(api, "root", undefined);
 
     expect(mind).toStrictEqual(1);
 
@@ -121,15 +137,18 @@ describe("changeMind", () => {
   });
 
   test("find mind", async () => {
-    find.mockImplementation(() => ({ mind: 1, schema: stub.schema }));
+    find.mockImplementation(() => ({ mind: 1 }));
+    readSchema.mockImplementation(() => stub.schema);
+
+    const api = {};
 
     const { mind, schema, searchParams } = await changeMind(
-      {},
+      api,
       `/${stub.mind}`,
       "_=b",
     );
 
-    expect(find).toHaveBeenCalledWith({}, stub.mind, undefined);
+    expect(find).toHaveBeenCalledWith(api, stub.mind, undefined);
 
     expect(mind).toStrictEqual(1);
 
@@ -143,15 +162,18 @@ describe("changeMind", () => {
   test("clone", async () => {
     const testCase = stub.cases.tags;
 
-    clone.mockImplementation(() => ({ mind: 1, schema: stub.schema }));
+    clone.mockImplementation(() => ({ mind: 1 }));
+    readSchema.mockImplementation(() => stub.schema);
+
+    const api = { select: vi.fn(() => [testCase.record]) };
 
     const { mind, schema, searchParams } = await changeMind(
-      {},
+      api,
       "/",
       `~=${testCase.url}&-=${testCase.token}&_=b`,
     );
 
-    expect(clone).toHaveBeenCalledWith({}, testCase.url, testCase.token);
+    expect(clone).toHaveBeenCalledWith(api, testCase.url, testCase.token);
 
     expect(mind).toStrictEqual(1);
 

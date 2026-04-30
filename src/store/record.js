@@ -1,5 +1,5 @@
-import schemaRoot from "@/proxy/default_root_schema.json";
 import { recordsToSchema } from "@/query/pure.js";
+import schemaRoot from "@/proxy/default_root_schema.json";
 
 /**
  * This

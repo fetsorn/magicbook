@@ -7,10 +7,21 @@ import {
 import {
   extractSchemaRecords,
   enrichBranchRecords,
-  recordsToSchema,
   schemaToBranchRecords,
-} from "@/query/pure.js";
+} from "@/proxy/pure.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
+import { v4 as uuidv4 } from "uuid";
+import shajs from "sha.js";
+
+/**
+ * This
+ * @name newUUID
+ * @export function
+ * @returns {String}
+ */
+export function newUUID() {
+  return shajs("sha256").update(uuidv4()).digest("hex");
+}
 
 /**
  * This

@@ -1,6 +1,7 @@
 import { updateRecord } from "@/proxy/impure.js";
 import { deleteRecord } from "@/proxy/record.js";
 import { find, clone } from "@/proxy/open.js";
+import { readSchema } from "@/store/record.js";
 import { getDefaultBase, pickDefaultSortBy } from "@/query/pure.js";
 
 /**
@@ -31,9 +32,11 @@ export async function changeMind(api, pathname, searchString) {
     }
   }
 
-  const { mind: mindRecord, schema } = shouldClone
+  const { mind: mindRecord } = shouldClone
     ? await clone(api, remoteUrl, token)
     : await find(api, mind, undefined);
+
+  const schema = await readSchema(api, mindRecord.mind);
 
   if (!searchParams.has("_")) {
     searchParams.set("_", getDefaultBase(schema));

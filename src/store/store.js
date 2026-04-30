@@ -123,12 +123,6 @@ export async function onRecordWipe(api, record) {
   setQueryStore("loading", false);
 }
 
-export async function onCancel() {
-  await proxyStore.abortPreviousStream();
-
-  setQueryStore("loading", false);
-}
-
 /**
  * This
  * @name onSearch

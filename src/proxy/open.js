@@ -2,11 +2,9 @@ import {
   enrichBranchRecords,
   schemaToBranchRecords,
   digestMessage,
-} from "@/query/pure.js";
-import { readSchema } from "@/store/record.js";
-import { newUUID } from "@/query/record.js";
+} from "@/proxy/pure.js";
+import { newUUID } from "@/proxy/record.js";
 import { saveMindRecord, updateMind } from "@/proxy/record.js";
-import schemaRoot from "@/proxy/default_root_schema.json";
 
 /**
  * This
@@ -20,7 +18,6 @@ export async function find(api, mind, name) {
   if (mind === "root")
     return {
       mind: { _: "mind", mind: "root", name: "minds" },
-      schema: schemaRoot,
     };
 
   const mindPartial = mind !== undefined ? { mind: mind } : {};
@@ -38,9 +35,7 @@ export async function find(api, mind, name) {
 
   if (mindRecord === undefined) throw Error("where is my mind");
 
-  const schema = await readSchema(api, mindRecord.mind);
-
-  return { mind: mindRecord, schema };
+  return { mind: mindRecord };
 }
 
 async function findMind(api, mind) {
@@ -81,10 +76,9 @@ export async function clone(api, url, token) {
   // get mind name from remote
   const nameClone = pathname.substring(pathname.lastIndexOf("/") + 1);
 
-  const schemaClone = await readSchema(api, mindRemote);
+  const [schemaRecordClone] = await api.select(mindRemote, { _: "_" });
 
-  const [schemaRecordClone, ...metaRecordsClone] =
-    schemaToBranchRecords(schemaClone);
+  const metaRecordsClone = await api.select(mindRemote, { _: "branch" });
 
   const branchRecordsClone = enrichBranchRecords(
     schemaRecordClone,
@@ -126,5 +120,5 @@ export async function clone(api, url, token) {
 
   // TODO remove mindRemote
 
-  return { schema: schemaClone, mind: recordClone };
+  return { mind: recordClone };
 }

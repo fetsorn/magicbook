@@ -6,7 +6,6 @@ import {
   onMindOpen,
   onSearch,
   getRecord,
-  onCancel,
 } from "./store.js";
 
 export {
@@ -17,7 +16,6 @@ export {
   onMindOpen,
   onSearch,
   getRecord,
-  onCancel,
 };
 
 export default {
@@ -28,5 +26,4 @@ export default {
   onMindOpen,
   onSearch,
   getRecord,
-  onCancel,
 };

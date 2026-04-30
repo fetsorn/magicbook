@@ -287,3 +287,9 @@ export async function onRecordCreate() {
     }),
   );
 }
+
+export async function onCancel() {
+  await proxyStore.abortPreviousStream();
+
+  setQueryStore("loading", false);
+}

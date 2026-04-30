@@ -1,31 +1,20 @@
 import { describe, expect, test, vi } from "vitest";
-import { newUUID } from "@/query/record.js";
-import { readSchema } from "@/store/record.js";
-import { enrichBranchRecords, schemaToBranchRecords } from "@/query/pure.js";
+import { newUUID } from "@/proxy/record.js";
+import { enrichBranchRecords } from "@/proxy/pure.js";
 import { find, clone } from "@/proxy/open.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
 import stub from "./stub.js";
 
-vi.mock("@/query/pure.js", async (importOriginal) => {
+vi.mock("@/proxy/pure.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {
     ...mod,
     enrichBranchRecords: vi.fn(),
-    schemaToBranchRecords: vi.fn(),
   };
 });
 
-vi.mock("@/store/record.js", async (importOriginal) => {
-  const mod = await importOriginal();
-
-  return {
-    ...mod,
-    readSchema: vi.fn(),
-  };
-});
-
-vi.mock("@/query/record.js", async (importOriginal) => {
+vi.mock("@/proxy/record.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {
@@ -46,10 +35,11 @@ describe("find", () => {
   });
 
   test("finds the root", async () => {
-    const result = await find({}, "root", undefined);
+    const api = { select: vi.fn(() => [testCase.record]) };
+
+    const result = await find(api, "root", undefined);
 
     expect(result).toStrictEqual({
-      schema: schemaRoot,
       mind: { _: "mind", mind: "root", name: "minds" },
     });
   });
@@ -59,10 +49,6 @@ describe("find", () => {
 
     const api = { select: vi.fn(() => [testCase.record]) };
 
-    readSchema.mockReset();
-
-    readSchema.mockImplementation(() => stub.schema);
-
     const result = await find(api, stub.id, undefined);
 
     expect(api.select).toHaveBeenCalledWith("root", {
@@ -71,7 +57,6 @@ describe("find", () => {
     });
 
     expect(result).toStrictEqual({
-      schema: stub.schema,
       mind: testCase.record,
     });
   });
@@ -100,15 +85,6 @@ describe("clone", () => {
 
     newUUID.mockImplementation(() => stub.id);
 
-    readSchema.mockReset();
-
-    readSchema.mockImplementation(() => testCase.schema);
-
-    schemaToBranchRecords.mockImplementation(() => [
-      testCase.schemaRecord,
-      testCase.metaRecords,
-    ]);
-
     enrichBranchRecords.mockImplementation(() => testCase.branchRecords);
 
     const result = await clone(api, testCase.url, testCase.token);
@@ -117,8 +93,6 @@ describe("clone", () => {
       url: testCase.url,
       token: testCase.token,
     });
-
-    expect(readSchema).toHaveBeenCalledWith(api, testCase.hash);
 
     const c = {
       _: "mind",
@@ -145,8 +119,6 @@ describe("clone", () => {
         origin_token: "token",
       },
     };
-
-    expect(result.schema).toStrictEqual(testCase.schema);
 
     expect(result.mind).toStrictEqual(c);
   });

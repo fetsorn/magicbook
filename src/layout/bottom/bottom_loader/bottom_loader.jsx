@@ -1,6 +1,5 @@
 import { useContext } from "solid-js";
-import { onCancel } from "@/store/store.js";
-import { QueryContext } from "@/query/store.js";
+import { QueryContext, onCancel } from "@/query/store.js";
 import { Confirmation } from "@/layout/components/index.js";
 
 export function BottomLoader() {
