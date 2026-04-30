@@ -18,28 +18,17 @@ import {
 } from "@/query/store.js";
 import { queryStore, setQueryStore } from "@/query/store.js";
 import { proxyStore, setProxyStore } from "@/proxy/store.js";
-import { deleteRecord } from "@/proxy/record.js";
 import { changeSearchParams, makeURL } from "@/query/pure.js";
 import { selectStream } from "@/store/impure.js";
 import { createRecord } from "@/query/impure.js";
-import { saveRecord, wipeRecord, changeMind } from "@/store/action.js";
+import { wipeRecord, changeMind } from "@/store/action.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
-
-vi.mock("@/proxy/record.js", async (importOriginal) => {
-  const mod = await importOriginal();
-
-  return {
-    ...mod,
-    deleteRecord: vi.fn(),
-  };
-});
 
 vi.mock("@/store/action.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {
     ...mod,
-    saveRecord: vi.fn(),
     wipeRecord: vi.fn(),
     changeMind: vi.fn(),
   };
@@ -84,7 +73,6 @@ describe("store", () => {
     makeURL.mockReset();
     createRecord.mockReset();
     selectStream.mockReset();
-    saveRecord.mockReset();
     wipeRecord.mockReset();
     changeMind.mockReset();
 
@@ -122,17 +110,27 @@ describe("store", () => {
 
   describe("onRecordSave", () => {
     test("", async () => {
-      saveRecord.mockImplementation(() => 1);
+      setQueryStore("recordSet", ["value1"]);
 
       const api = {
+        crud: {
+          u: vi.fn(() => 1),
+          d: vi.fn(() => 1),
+        },
         getOrigin: vi.fn(),
       };
 
-      await onRecordSave(api, {}, {});
+      const recordOld = { _: "mind", mind: "value1" };
 
-      expect(saveRecord).toHaveBeenCalledWith(api, "root", "mind", [], {}, {});
+      const recordNew = { _: "mind", mind: "value2" };
 
-      expect(queryStore.recordSet).toStrictEqual(1);
+      await onRecordSave(api, recordOld, recordNew);
+
+      expect(api.crud.d).toHaveBeenCalledWith("root", recordOld);
+
+      expect(api.crud.u).toHaveBeenCalledWith("root", recordNew);
+
+      expect(queryStore.recordSet).toStrictEqual(["value2"]);
     });
   });
 

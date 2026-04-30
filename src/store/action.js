@@ -1,4 +1,3 @@
-import { updateRecord } from "@/proxy/impure.js";
 import { find, clone } from "@/proxy/open.js";
 import { readSchema } from "@/store/record.js";
 import { getDefaultBase, pickDefaultSortBy } from "@/query/pure.js";
@@ -53,34 +52,4 @@ export async function changeMind(api, pathname, searchString) {
     schema,
     searchParams,
   };
-}
-
-/**
- * This
- * @name saveRecord
- * @function
- * @param {String} mind -
- * @param {String} base -
- * @param {object[]} records -
- * @param {object} recordOld -
- * @param {object} recordNew -
- * @returns {object[]}
- */
-export async function saveRecord(
-  api,
-  mind,
-  base,
-  records,
-  recordOld,
-  recordNew,
-) {
-  await updateRecord(api, mind, base, recordNew);
-
-  const keyOld = recordOld[base];
-
-  const keyNew = recordNew[base];
-
-  const recordsNew = records.filter((r) => r !== keyOld).concat([keyNew]);
-
-  return recordsNew;
 }

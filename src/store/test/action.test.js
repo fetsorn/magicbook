@@ -1,8 +1,6 @@
 import { describe, expect, beforeEach, test, vi } from "vitest";
-import { saveRecord, changeMind } from "@/store/action.js";
+import { changeMind } from "@/store/action.js";
 import { readSchema } from "@/store/record.js";
-import { deleteRecord } from "@/proxy/record.js";
-import { updateRecord } from "@/proxy/impure.js";
 import { find, clone } from "@/proxy/open.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
 import stub from "./stub.js";
@@ -36,15 +34,6 @@ vi.mock("@/proxy/open.js", async (importOriginal) => {
   };
 });
 
-vi.mock("@/proxy/record.js", async (importOriginal) => {
-  const mod = await importOriginal();
-
-  return {
-    ...mod,
-    deleteRecord: vi.fn(),
-  };
-});
-
 vi.mock("@/store/impure.js", async (importOriginal) => {
   const mod = await importOriginal();
 
@@ -52,44 +41,6 @@ vi.mock("@/store/impure.js", async (importOriginal) => {
     ...mod,
     selectStream: vi.fn(),
   };
-});
-
-vi.mock("@/proxy/impure.js", async (importOriginal) => {
-  const mod = await importOriginal();
-
-  return {
-    ...mod,
-    updateRecord: vi.fn(),
-  };
-});
-
-describe("saveRecord", () => {
-  test("", async () => {
-    const mind = {};
-
-    const base = "b";
-
-    const recordOld = { _: "b", b: "id1", c: "1" };
-
-    const records = [recordOld.b];
-
-    const recordNew = { _: "b", b: "id2", c: "2" };
-
-    const api = { select: vi.fn(() => [recordOld]) };
-
-    const recordsNew = await saveRecord(
-      api,
-      mind,
-      base,
-      records,
-      recordOld,
-      recordNew,
-    );
-
-    expect(updateRecord).toHaveBeenCalledWith(api, mind, base, recordNew);
-
-    expect(recordsNew).toStrictEqual([recordNew.b]);
-  });
 });
 
 describe("changeMind", () => {

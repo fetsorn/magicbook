@@ -5,7 +5,7 @@ import { buildRecord } from "@/proxy/impure.js";
 import { selectStream } from "@/store/impure.js";
 import { resolve } from "@/proxy/record.js";
 import { readSchema } from "@/store/record.js";
-import { saveRecord, changeMind } from "@/store/action.js";
+import { changeMind } from "@/store/action.js";
 import { proxyStore, setProxyStore } from "@/proxy/store.js";
 import {
   queryStore,
@@ -40,31 +40,19 @@ export async function getRecord(api, record) {
 export async function onRecordSave(api, recordOld, recordNew) {
   setQueryStore("loading", true);
 
-  const records = await saveRecord(
-    api,
-    queryStore.mind.mind,
-    new URLSearchParams(queryStore.searchParams).get("_"),
-    queryStore.recordSet,
-    recordOld,
-    recordNew,
-  );
+  const base = new URLSearchParams(queryStore.searchParams).get("_");
 
-  try {
-    const syncResult = await resolve(api, queryStore.mind.mind);
+  await api.crud.d(queryStore.mind.mind, recordOld);
 
-    setProxyStore(
-      produce((state) => {
-        state.mergeResult = syncResult.ok;
-        state.syncError = undefined;
-      }),
-    );
-  } catch (e) {
-    // sync is best-effort after local save — surface but don't throw
-    console.error("sync after save failed:", e);
-    setQueryStore("syncError", e?.message ?? String(e));
-  }
+  await api.crud.u(queryStore.mind.mind, recordNew);
 
-  const keyNew = recordNew[recordNew._];
+  const keyOld = recordOld[base];
+
+  const keyNew = recordNew[base];
+
+  const records = queryStore.recordSet
+    .filter((r) => r !== keyOld)
+    .concat([keyNew]);
 
   // force reload
   setQueryStore("recordSet", []);

@@ -1,11 +1,30 @@
 import { deleteRecord, resolve } from "@/proxy/record.js";
 import { setProxyStore } from "@/proxy/store.js";
 
+// next is update, then select
+
 async function c(api) {}
 
 async function r(api) {}
 
-async function u(api) {}
+async function u(api, mind, record) {
+  await updateRecord(api, queryStore.mind.mind, base, recordNew);
+
+  try {
+    const syncResult = await resolve(api, queryStore.mind.mind);
+
+    setProxyStore(
+      produce((state) => {
+        state.mergeResult = syncResult.ok;
+        state.syncError = undefined;
+      }),
+    );
+  } catch (e) {
+    // sync is best-effort after local save — surface but don't throw
+    console.error("sync after save failed:", e);
+    setQueryStore("syncError", e?.message ?? String(e));
+  }
+}
 
 async function d(api, mind, record) {
   await deleteRecord(api, mind, record);
@@ -26,6 +45,7 @@ async function d(api, mind, record) {
   }
 }
 
+// currying for convenience
 export default (provider) => {
   return {
     c: async () => c(provider),
