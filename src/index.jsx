@@ -5,6 +5,7 @@ import "./index.css";
 import App from "./layout/layout.jsx";
 import { polyfill } from "./polyfill.js";
 import { ApiProvider } from "./context.js";
+import crud from "@/proxy/index.js";
 
 polyfill();
 
@@ -15,6 +16,8 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
 }
 
 export default function mindbook(provider) {
+  const api = { ...provider, crud: crud(provider) };
+
   render(
     () => (
       <ApiProvider value={provider}>

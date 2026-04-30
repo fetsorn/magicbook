@@ -1,5 +1,4 @@
 import { updateRecord } from "@/proxy/impure.js";
-import { deleteRecord } from "@/proxy/record.js";
 import { find, clone } from "@/proxy/open.js";
 import { readSchema } from "@/store/record.js";
 import { getDefaultBase, pickDefaultSortBy } from "@/query/pure.js";
@@ -82,26 +81,6 @@ export async function saveRecord(
   const keyNew = recordNew[base];
 
   const recordsNew = records.filter((r) => r !== keyOld).concat([keyNew]);
-
-  return recordsNew;
-}
-
-/**
- * This
- * @name wipeRecord
- * @function
- * @param {object} mind -
- * @param {String} base -
- * @param {object[]} records -
- * @param {object} record -
- * @returns {object[]}
- */
-export async function wipeRecord(api, mind, base, records, record) {
-  await deleteRecord(api, mind, record);
-
-  const key = record[base];
-
-  const recordsNew = records.filter((r) => r !== key);
 
   return recordsNew;
 }

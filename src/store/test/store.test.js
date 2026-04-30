@@ -18,11 +18,21 @@ import {
 } from "@/query/store.js";
 import { queryStore, setQueryStore } from "@/query/store.js";
 import { proxyStore, setProxyStore } from "@/proxy/store.js";
+import { deleteRecord } from "@/proxy/record.js";
 import { changeSearchParams, makeURL } from "@/query/pure.js";
 import { selectStream } from "@/store/impure.js";
 import { createRecord } from "@/query/impure.js";
 import { saveRecord, wipeRecord, changeMind } from "@/store/action.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
+
+vi.mock("@/proxy/record.js", async (importOriginal) => {
+  const mod = await importOriginal();
+
+  return {
+    ...mod,
+    deleteRecord: vi.fn(),
+  };
+});
 
 vi.mock("@/store/action.js", async (importOriginal) => {
   const mod = await importOriginal();
@@ -128,17 +138,18 @@ describe("store", () => {
 
   describe("onRecordWipe", () => {
     test("", async () => {
-      wipeRecord.mockImplementation(() => 1);
-
       const api = {
+        crud: {
+          d: vi.fn(() => 1),
+        },
         getOrigin: vi.fn(),
       };
 
       await onRecordWipe(api, {});
 
-      expect(wipeRecord).toHaveBeenCalledWith(api, "root", "mind", [], {});
+      expect(api.crud.d).toHaveBeenCalledWith("root", {});
 
-      expect(queryStore.recordSet).toStrictEqual(1);
+      expect(queryStore.recordSet).toStrictEqual([]);
     });
   });
 

@@ -5,7 +5,7 @@ import { buildRecord } from "@/proxy/impure.js";
 import { selectStream } from "@/store/impure.js";
 import { resolve } from "@/proxy/record.js";
 import { readSchema } from "@/store/record.js";
-import { saveRecord, wipeRecord, changeMind } from "@/store/action.js";
+import { saveRecord, changeMind } from "@/store/action.js";
 import { proxyStore, setProxyStore } from "@/proxy/store.js";
 import {
   queryStore,
@@ -90,28 +90,13 @@ export async function onRecordSave(api, recordOld, recordNew) {
 export async function onRecordWipe(api, record) {
   setQueryStore("loading", true);
 
-  const records = await wipeRecord(
-    api,
-    queryStore.mind.mind,
-    new URLSearchParams(queryStore.searchParams).get("_"),
-    queryStore.recordSet,
-    record,
-  );
+  await api.crud.d(queryStore.mind.mind, record);
 
-  try {
-    const syncResult = await resolve(api, queryStore.mind.mind);
+  const base = new URLSearchParams(queryStore.searchParams).get("_");
 
-    setProxyStore(
-      produce((state) => {
-        state.mergeResult = syncResult.ok;
-        state.syncError = undefined;
-      }),
-    );
-  } catch (e) {
-    // sync is best-effort after local delete — surface but don't fail
-    console.error("sync after delete failed:", e);
-    setProxyStore("syncError", e?.message ?? String(e));
-  }
+  const key = record[base];
+
+  const records = queryStore.recordSet.filter((r) => r !== key);
 
   setQueryStore(
     produce((state) => {

@@ -1,5 +1,5 @@
 import { describe, expect, beforeEach, test, vi } from "vitest";
-import { saveRecord, wipeRecord, changeMind } from "@/store/action.js";
+import { saveRecord, changeMind } from "@/store/action.js";
 import { readSchema } from "@/store/record.js";
 import { deleteRecord } from "@/proxy/record.js";
 import { updateRecord } from "@/proxy/impure.js";
@@ -89,26 +89,6 @@ describe("saveRecord", () => {
     expect(updateRecord).toHaveBeenCalledWith(api, mind, base, recordNew);
 
     expect(recordsNew).toStrictEqual([recordNew.b]);
-  });
-});
-
-describe("wipeRecord", () => {
-  test("deletes", async () => {
-    const mind = {};
-
-    const base = "b";
-
-    const record = { _: "b", b: "id1", c: "1" };
-
-    const records = [record.b];
-
-    const api = { select: vi.fn(() => [record]) };
-
-    const recordsNew = await wipeRecord(api, mind, base, records, record);
-
-    expect(deleteRecord).toHaveBeenCalledWith(api, mind, record);
-
-    expect(recordsNew).toStrictEqual([]);
   });
 });
 
