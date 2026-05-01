@@ -8,10 +8,10 @@ async function c(api) {}
 async function r(api) {}
 
 async function u(api, mind, record) {
-  await updateRecord(api, queryStore.mind.mind, base, recordNew);
+  await updateRecord(api, mind, base, recordNew);
 
   try {
-    const syncResult = await resolve(api, queryStore.mind.mind);
+    const syncResult = await resolve(api, mind);
 
     setProxyStore(
       produce((state) => {
@@ -22,7 +22,7 @@ async function u(api, mind, record) {
   } catch (e) {
     // sync is best-effort after local save — surface but don't throw
     console.error("sync after save failed:", e);
-    setQueryStore("syncError", e?.message ?? String(e));
+    setProxyStore("syncError", e?.message ?? String(e));
   }
 }
 

@@ -2,21 +2,22 @@ import parser from "search-query-parser";
 import diff from "microdiff";
 import { createContext } from "solid-js";
 import { createStore, produce } from "solid-js/store";
-import { sortCallback, changeSearchParams, makeURL } from "@/query/pure.js";
+import { sortCallback, changeSearchParams } from "@/query/pure.js";
 import { createRecord } from "@/query/impure.js";
 
 export const QueryContext = createContext();
 
 export const [queryStore, setQueryStore] = createStore({
+  abortPreviousStream: async () => {},
   searchParams: "_=mind", // sets the state of search bar
-  schema: {}, // TODO set schemaRoot somehow
   mind: { _: "mind", mind: "root", name: "minds" },
+  schema: {}, // TODO set schemaRoot somehow
+  template: {},
   record: undefined,
   recordSet: [],
   recordMap: {},
   spoilerMap: {},
   loading: false,
-  template: {},
   searchBar: "", // remembers the last state of search bar
   streamCounter: 0,
 });
@@ -195,9 +196,9 @@ export function updateSearchParams(field, value) {
       value,
     );
 
-    const url = makeURL(searchParams, queryStore.mind.mind);
-
-    window.history.replaceState(null, null, url);
+    // TODO move to proxy somewhere
+    //const url = makeURL(searchParams, queryStore.mind.mind);
+    //window.history.replaceState(null, null, url);
 
     // do not reset searchParams here to preserve focus on filter
     setQueryStore(
@@ -289,7 +290,7 @@ export async function onRecordCreate() {
 }
 
 export async function onCancel() {
-  await proxyStore.abortPreviousStream();
+  await queryStore.abortPreviousStream();
 
   setQueryStore("loading", false);
 }

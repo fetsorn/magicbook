@@ -1,10 +1,5 @@
 import { describe, expect, test, afterEach, vi } from "vitest";
-import {
-  onRecordSave,
-  onRecordWipe,
-  onSearch,
-  onMindChange,
-} from "@/store/store.js";
+import { onRecordSave, onRecordWipe, onSearch } from "@/store/store.js";
 import {
   onRecordCreate,
   updateSearchParams,
@@ -18,21 +13,11 @@ import {
 } from "@/query/store.js";
 import { queryStore, setQueryStore } from "@/query/store.js";
 import { proxyStore, setProxyStore } from "@/proxy/store.js";
-import { changeSearchParams, makeURL } from "@/query/pure.js";
+import { makeURL } from "@/proxy/pure.js";
+import { changeSearchParams } from "@/query/pure.js";
 import { selectStream } from "@/store/impure.js";
 import { createRecord } from "@/query/impure.js";
-import { wipeRecord, changeMind } from "@/store/action.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
-
-vi.mock("@/store/action.js", async (importOriginal) => {
-  const mod = await importOriginal();
-
-  return {
-    ...mod,
-    wipeRecord: vi.fn(),
-    changeMind: vi.fn(),
-  };
-});
 
 vi.mock("@/store/impure.js", async (importOriginal) => {
   const mod = await importOriginal();
@@ -52,13 +37,21 @@ vi.mock("@/query/impure.js", async (importOriginal) => {
   };
 });
 
+vi.mock("@/proxy/pure.js", async (importOriginal) => {
+  const mod = await importOriginal();
+
+  return {
+    ...mod,
+    makeURL: vi.fn(),
+  };
+});
+
 vi.mock("@/query/pure.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {
     ...mod,
     changeSearchParams: vi.fn(),
-    makeURL: vi.fn(),
   };
 });
 
@@ -73,8 +66,6 @@ describe("store", () => {
     makeURL.mockReset();
     createRecord.mockReset();
     selectStream.mockReset();
-    wipeRecord.mockReset();
-    changeMind.mockReset();
 
     setQueryStore({
       searchParams: new URLSearchParams("_=mind"),
@@ -82,8 +73,6 @@ describe("store", () => {
       record: undefined,
       recordSet: [],
       mind: { _: "mind", mind: "root", name: "minds" },
-    });
-    setProxyStore({
       abortPreviousStream: () => {},
     });
   });
@@ -175,7 +164,8 @@ describe("store", () => {
 
       expect(queryStore.searchParams.toString()).toStrictEqual("1");
 
-      expect(window.history.replaceState).toHaveBeenCalledWith(null, null, 2);
+      // TODO do in proxy
+      //expect(window.history.replaceState).toHaveBeenCalledWith(null, null, 2);
     });
 
     test("ignores evenor specific param", async () => {
@@ -218,35 +208,7 @@ describe("store", () => {
 
       expect(selectStream).toHaveBeenCalled();
 
-      expect(proxyStore.abortPreviousStream()()).toBe(3);
-    });
-  });
-
-  describe("onMindChange", () => {
-    test("", async () => {
-      const mind = { _: "mind", mind: "id", name: "name" };
-
-      changeMind.mockImplementation(async () => ({
-        mind: mind,
-        schema: 2,
-        searchParams: 3,
-      }));
-
-      window.history.replaceState = vi.fn();
-
-      makeURL.mockImplementation(() => 5);
-
-      const api = {
-        getOrigin: vi.fn(),
-      };
-
-      await onMindChange(api, "/", "_=mind");
-
-      expect(queryStore.mind).toStrictEqual(mind);
-
-      expect(queryStore.schema).toStrictEqual(2);
-
-      expect(queryStore.searchParams).toStrictEqual("3");
+      expect(queryStore.abortPreviousStream()()).toBe(3);
     });
   });
 

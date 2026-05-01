@@ -3,8 +3,8 @@ import { onMount, useContext } from "solid-js";
 import { MetaProvider, Title } from "@solidjs/meta";
 import { useApi } from "@/context.js";
 import { onMindChange } from "@/store/store.js";
-import { QueryContext, queryStore } from "@/query/store.js";
-import { ProxyContext, proxyStore, onStartup } from "@/proxy/store.js";
+import { QueryContext } from "@/query/store.js";
+import { ProxyContext, onStartup } from "@/proxy/store.js";
 import {
   NavigationRevert,
   NavigationSave,
@@ -96,28 +96,22 @@ export function LayoutProfile() {
 export function App() {
   const api = useApi();
 
-  onMount(async () => {
-    await onStartup(api);
-
-    await onMindChange(api, history.location.pathname, history.location.search);
-  });
+  const { store: queryStore } = useContext(QueryContext);
 
   return (
-    <ProxyContext.Provider value={{ store: proxyStore }}>
-      <QueryContext.Provider value={{ store: queryStore }}>
-        <MetaProvider>
-          <Title>{"evenor – " + queryStore.mind.name}</Title>
-        </MetaProvider>
+    <>
+      <MetaProvider>
+        <Title>{"evenor – " + queryStore.mind.name}</Title>
+      </MetaProvider>
 
-        <main className={styles.main}>
-          <LayoutOverview />
+      <main className={styles.main}>
+        <LayoutOverview />
 
-          <LayoutProfile />
-        </main>
+        <LayoutProfile />
+      </main>
 
-        <span style={{ display: "none" }}>{__COMMIT_HASH__}</span>
-      </QueryContext.Provider>
-    </ProxyContext.Provider>
+      <span style={{ display: "none" }}>{__COMMIT_HASH__}</span>
+    </>
   );
 }
 

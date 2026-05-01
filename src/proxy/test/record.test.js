@@ -8,6 +8,7 @@ import {
   updateEntry,
   deleteRecord,
   createRoot,
+  readSchema,
 } from "@/proxy/record.js";
 import {
   readRemoteTags,
@@ -16,6 +17,7 @@ import {
   writeLocalTags,
 } from "@/proxy/tags.js";
 import { schemaToBranchRecords } from "@/proxy/pure.js";
+import schemaRoot from "@/proxy/default_root_schema.json";
 import stub from "./stub.js";
 
 vi.mock("@/proxy/pure.js", async (importOriginal) => {
@@ -184,5 +186,34 @@ describe("loadMindRecord", () => {
     const record = await loadMindRecord(api, testCase.record);
 
     expect(record).toStrictEqual(testCase.record);
+  });
+});
+
+describe("readSchema", () => {
+  test("root", async () => {
+    const api = { select: () => {} };
+
+    const schema = await readSchema(api, "root");
+
+    expect(schema).toStrictEqual(schemaRoot);
+  });
+
+  test("id", async () => {
+    const testCase = stub.cases.trunk;
+
+    const api = {
+      select: vi
+        .fn()
+        .mockImplementationOnce(() => [testCase.schemaRecord])
+        .mockImplementationOnce(() => testCase.branchRecords),
+    };
+
+    const schema = await readSchema(api, stub.id);
+
+    expect(api.select).toHaveBeenCalledWith(stub.id, { _: "_" });
+
+    expect(api.select).toHaveBeenCalledWith(stub.id, { _: "branch" });
+
+    expect(schema).toStrictEqual(testCase.schema);
   });
 });

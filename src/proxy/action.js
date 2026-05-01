@@ -1,6 +1,6 @@
 import { find, clone } from "@/proxy/open.js";
-import { readSchema } from "@/store/record.js";
-import { getDefaultBase, pickDefaultSortBy } from "@/query/pure.js";
+import { readSchema } from "@/proxy/record.js";
+import { getDefaultBase, pickDefaultSortBy } from "@/proxy/pure.js";
 
 /**
  * This

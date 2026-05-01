@@ -107,7 +107,11 @@ describe("App", () => {
 
     const { getByText } = render(() => (
       <ApiProvider value={api}>
-        <App />
+        <ProxyContext.Provider value={{ store: proxyStore }}>
+          <QueryContext.Provider value={{ store: queryStore }}>
+            <App />
+          </QueryContext.Provider>
+        </ProxyContext.Provider>
       </ApiProvider>
     ));
 
@@ -130,7 +134,11 @@ describe("App", () => {
 
     render(() => (
       <ApiProvider value={api}>
-        <App />
+        <ProxyContext.Provider value={{ store: proxyStore }}>
+          <QueryContext.Provider value={{ store: queryStore }}>
+            <App />
+          </QueryContext.Provider>
+        </ProxyContext.Provider>
       </ApiProvider>
     ));
   });

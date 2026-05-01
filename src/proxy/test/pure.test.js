@@ -3,6 +3,10 @@ import {
   enrichBranchRecords,
   extractSchemaRecords,
   schemaToBranchRecords,
+  makeURL,
+  pickDefaultSortBy,
+  getDefaultBase,
+  recordsToSchema,
 } from "@/proxy/pure.js";
 import stub from "./stub.js";
 
@@ -35,5 +39,47 @@ describe("schemaToBranchRecords", () => {
       testCase.schemaRecord,
       ...testCase.metaRecords,
     ]);
+  });
+});
+
+describe("makeURL", () => {
+  test("sets root", () => {
+    expect(makeURL(new URLSearchParams("_=a&a=1&b=2"), "root")).toStrictEqual(
+      "#?_=a&a=1&b=2",
+    );
+  });
+
+  test("sets mind", () => {
+    expect(makeURL(new URLSearchParams("_=a&a=1&b=2"), "id")).toStrictEqual(
+      "#/id?_=a&a=1&b=2",
+    );
+  });
+
+  test("sets sortBy", () => {
+    expect(makeURL(new URLSearchParams("_=a&a=1&b=2"), "id")).toStrictEqual(
+      "#/id?_=a&a=1&b=2",
+    );
+  });
+});
+
+describe("getDefaultBase", () => {
+  test("", () => {
+    expect(getDefaultBase(stub.schema)).toBe("a");
+  });
+});
+
+describe("pickDefaultSortBy", () => {
+  test("", () => {
+    expect(pickDefaultSortBy(stub.schema, "b")).toBe("b");
+  });
+});
+
+describe("recordsToSchema", () => {
+  test("converts", () => {
+    const testCase = stub.cases.description;
+
+    expect(
+      recordsToSchema(testCase.schemaRecord, testCase.metaRecords),
+    ).toStrictEqual(testCase.schema);
   });
 });

@@ -1,11 +1,11 @@
 import { describe, expect, beforeEach, test, vi } from "vitest";
-import { changeMind } from "@/store/action.js";
-import { readSchema } from "@/store/record.js";
+import { changeMind } from "@/proxy/action.js";
+import { readSchema } from "@/proxy/record.js";
 import { find, clone } from "@/proxy/open.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
 import stub from "./stub.js";
 
-vi.mock("@/store/record.js", async (importOriginal) => {
+vi.mock("@/proxy/record.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {
@@ -14,12 +14,11 @@ vi.mock("@/store/record.js", async (importOriginal) => {
   };
 });
 
-vi.mock("@/query/pure.js", async (importOriginal) => {
+vi.mock("@/proxy/pure.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {
     ...mod,
-    changeSearchParams: vi.fn(),
     makeURL: vi.fn(),
   };
 });
@@ -31,15 +30,6 @@ vi.mock("@/proxy/open.js", async (importOriginal) => {
     ...mod,
     find: vi.fn(),
     clone: vi.fn(),
-  };
-});
-
-vi.mock("@/store/impure.js", async (importOriginal) => {
-  const mod = await importOriginal();
-
-  return {
-    ...mod,
-    selectStream: vi.fn(),
   };
 });
 

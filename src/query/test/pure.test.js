@@ -1,13 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
   ensureTrunk,
-  recordsToSchema,
   queryToSearchParams,
   searchParamsToQuery,
   changeSearchParams,
-  makeURL,
-  getDefaultBase,
-  pickDefaultSortBy,
   findFirstSortBy,
 } from "@/query/pure.js";
 import stub from "./stub.js";
@@ -173,50 +169,8 @@ describe("changeSearchParams", () => {
   });
 });
 
-describe("makeURL", () => {
-  test("sets root", () => {
-    expect(makeURL(new URLSearchParams("_=a&a=1&b=2"), "root")).toStrictEqual(
-      "#?_=a&a=1&b=2",
-    );
-  });
-
-  test("sets mind", () => {
-    expect(makeURL(new URLSearchParams("_=a&a=1&b=2"), "id")).toStrictEqual(
-      "#/id?_=a&a=1&b=2",
-    );
-  });
-
-  test("sets sortBy", () => {
-    expect(makeURL(new URLSearchParams("_=a&a=1&b=2"), "id")).toStrictEqual(
-      "#/id?_=a&a=1&b=2",
-    );
-  });
-});
-
-describe("getDefaultBase", () => {
-  test("", () => {
-    expect(getDefaultBase(stub.schema)).toBe("a");
-  });
-});
-
-describe("pickDefaultSortBy", () => {
-  test("", () => {
-    expect(pickDefaultSortBy(stub.schema, "b")).toBe("b");
-  });
-});
-
 describe("findFirstSortBy", () => {
   test("", () => {
     expect(findFirstSortBy("a", { _: "a", a: "b" })).toBe("b");
-  });
-});
-
-describe("recordsToSchema", () => {
-  test("converts", () => {
-    const testCase = stub.cases.description;
-
-    expect(
-      recordsToSchema(testCase.schemaRecord, testCase.metaRecords),
-    ).toStrictEqual(testCase.schema);
   });
 });

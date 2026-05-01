@@ -3,7 +3,7 @@ import { selectStream } from "@/store/impure.js";
 import { loadMindRecord } from "@/proxy/record.js";
 import stub from "./stub.js";
 
-vi.mock("@/store/record.js", async (importOriginal) => {
+vi.mock("@/proxy/record.js", async (importOriginal) => {
   const mod = await importOriginal();
 
   return {

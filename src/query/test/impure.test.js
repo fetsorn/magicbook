@@ -1,7 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { createRecord } from "@/query/impure.js";
 import { newUUID } from "@/query/record.js";
-import defaultMindRecord from "@/proxy/default_mind_record.json";
 import stub from "./stub.js";
 
 vi.mock("@/query/record.js", async (importOriginal) => {
@@ -16,12 +15,14 @@ describe("createRecord", () => {
   newUUID.mockImplementation(() => stub.id);
 
   test("root", async () => {
-    const record = await createRecord("root", "mind", defaultMindRecord);
+    const template = { location: "town" };
+
+    const record = await createRecord("root", "mind", template);
 
     expect(record).toStrictEqual({
       _: "mind",
       mind: stub.id,
-      ...defaultMindRecord,
+      ...template,
     });
   });
 

@@ -1,11 +1,9 @@
 /* try to keep store interactions only in this file */
-import { getDefaultBase, makeURL } from "@/query/pure.js";
+import { makeURL } from "@/proxy/pure.js";
 import { produce } from "solid-js/store";
 import { buildRecord } from "@/proxy/impure.js";
 import { selectStream } from "@/store/impure.js";
-import { resolve } from "@/proxy/record.js";
-import { readSchema } from "@/store/record.js";
-import { changeMind } from "@/store/action.js";
+import { resolve, readSchema } from "@/proxy/record.js";
 import { proxyStore, setProxyStore } from "@/proxy/store.js";
 import {
   queryStore,
@@ -151,19 +149,14 @@ export async function onSearch(api) {
     );
 
     // stop previous stream
-    await proxyStore.abortPreviousStream();
+    await queryStore.abortPreviousStream();
 
-    setProxyStore(
+    setQueryStore(
       produce((state) => {
         // solid store tries to call the function, so pass a factory here
         state.abortPreviousStream = () => () => {
           return abortPreviousStream();
         };
-      }),
-    );
-
-    setQueryStore(
-      produce((state) => {
         // erase existing records
         state.recordSet = [];
       }),
@@ -199,76 +192,6 @@ export async function onSearch(api) {
   }
 
   setQueryStore("loading", false);
-}
-
-/**
- * This
- * @name onMindChange
- * @export function
- * @param {String} pathname -
- * @param {String} searchString -
- */
-export async function onMindChange(api, pathname, searchString) {
-  // try to stop the stream before changing minds
-  await proxyStore.abortPreviousStream();
-
-  // TODO somewhere here in case of error doesn't change url to root
-  setQueryStore(
-    produce((state) => {
-      // this updates the overview on change of params
-      // and removes focus from the filter
-      // erase searchParams to re-render the filter index
-      state.searchParams = "";
-      // erase records to re-render the overview
-      state.recordSet = [];
-    }),
-  );
-
-  let result;
-
-  // in case of error fallback to root
-  try {
-    result = await changeMind(api, pathname, searchString);
-  } catch (e) {
-    console.error(e);
-
-    result = await changeMind(api, "/", "_=mind");
-  }
-
-  const { mind, schema, searchParams } = result;
-
-  try {
-    const syncResult = await resolve(api, mind.mind);
-
-    setProxyStore(
-      produce((state) => {
-        state.mergeResult = syncResult.ok;
-        state.syncError = undefined;
-      }),
-    );
-  } catch (e) {
-    // sync is best-effort on navigation — surface but don't fail
-    console.error("sync on mind change failed:", e);
-    setProxyStore("syncError", e?.message ?? String(e));
-  }
-
-  setQueryStore(
-    produce((state) => {
-      state.mind = mind;
-      state.schema = schema;
-      state.searchParams = searchParams.toString();
-    }),
-  );
-
-  const url = makeURL(searchParams, queryStore.mind.mind);
-
-  window.history.replaceState(null, null, url);
-
-  // only search by default in the root mind
-  if (mind.mind === "root") {
-    // start a search stream
-    await onSearch(api);
-  }
 }
 
 /**
@@ -343,12 +266,4 @@ export async function warp(branch, value, cognate) {
   await onSearch(api, "__", cognate);
 
   await onSearch(api, queryStore.schema[cognate].trunks[0], value);
-}
-
-export async function onMindOpen(api, mind) {
-  const schema = await readSchema(api, mind);
-
-  const base = await getDefaultBase(schema);
-
-  await onMindChange(api, `/${mind}`, `_=${base}`);
 }
