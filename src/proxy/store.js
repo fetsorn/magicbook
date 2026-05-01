@@ -42,6 +42,7 @@ export async function onMindChange(api, pathname, searchString) {
       state.searchParams = "";
       // erase records to re-render the overview
       state.recordSet = [];
+      state.record = undefined;
     }),
   );
 
@@ -78,10 +79,18 @@ export async function onMindChange(api, pathname, searchString) {
 
   window.history.pushState(null, null, url);
 
-  setQueryStore("mind", mind);
-  setQueryStore("schema", schema);
-  setQueryStore("searchParams", searchParams);
-  setQueryStore("template", template);
+  setQueryStore(
+    produce((state) => {
+      // this updates the overview on change of params
+      // and removes focus from the filter
+      // erase searchParams to re-render the filter index
+      state.mind = mind;
+      // erase records to re-render the overview
+      state.schema = schema;
+      state.searchParams = searchParams;
+      state.template = template;
+    }),
+  );
 
   // TODO move to onMount if config true
   //// only search by default in the root mind
