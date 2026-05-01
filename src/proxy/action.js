@@ -34,7 +34,7 @@ export async function changeMind(api, pathname, searchString) {
   }
 
   const { mind: mindRecord } = shouldClone
-    ? await clone(api, remoteUrl, token)
+    ? await clone(api, undefined, remoteUrl, token)
     : await find(api, mind, undefined);
 
   const schema = await readSchema(api, mindRecord.mind);

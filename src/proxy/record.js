@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
-import shajs from "sha.js";
 import {
   readRemoteTags,
   //readLocalTags,
@@ -12,6 +10,7 @@ import {
   schemaToBranchRecords,
   recordsToSchema,
 } from "@/proxy/pure.js";
+import { clone } from "@/proxy/open.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
 
 /**
@@ -37,16 +36,6 @@ export async function readSchema(api, mind) {
 
 /**
  * This
- * @name newUUID
- * @export function
- * @returns {String}
- */
-export function newUUID() {
-  return shajs("sha256").update(uuidv4()).digest("hex");
-}
-
-/**
- * This
  * @name sync
  * @export function
  * @param {String} mind
@@ -59,6 +48,9 @@ export async function resolve(api, mind) {
   let resolveResult = { ok: true };
 
   for (const tagRemote of tagsRemote) {
+    // to fail early
+    await fetch(tagRemote.origin_url, { mode: "no-cors" });
+
     const resolvePartial = await api.resolve(mind, {
       url: tagRemote.origin_url,
       token: tagRemote.origin_token,
@@ -111,6 +103,18 @@ export async function loadMindRecord(api, record) {
   return recordNew;
 }
 
+async function mindIsNew(api, mind) {
+  const query = {
+    _: "mind",
+    mind,
+  };
+
+  // find mind in root folder
+  const mindRecords = await api.select("root", query);
+
+  return mindRecords === undefined || mindRecords.length === 0;
+}
+
 /**
  * This writes schema and git state
  * @name saveMindRecord
@@ -120,28 +124,72 @@ export async function loadMindRecord(api, record) {
 export async function saveMindRecord(api, record) {
   const mind = record.mind;
 
-  // extract schema record with trunks from branch records
-  const [schemaRecord, ...metaRecords] = extractSchemaRecords(record.branch);
-
   // create mind directory
   const name = Array.isArray(record.name) ? record.name[0] : record.name;
 
-  try {
-    // fails if exists
-    await api.gitinit(mind, name);
+  const origin = Array.isArray(record.origin_url)
+    ? record.origin_url[0]
+    : record.origin_url;
 
-    await api.csvsinit(mind);
-  } catch (e) {
-    if (e.message === "EEXIST") {
-      console.log("repo exists, renaming");
+  // if record has origin_url it can be cloned
+  const hasURL = origin !== undefined && origin.origin_url !== undefined;
 
-      await api.rename(mind, name);
-    } else {
-      console.log(e.message);
-    }
+  // search root for mind
+  const isNew = await mindIsNew(api, mind);
+
+  // TODO this is not strictly correct because if clone fails
+  // it should fall through to the initialization
+
+  if (hasURL && isNew) {
+    // pass a uuid to clone so that it can clone to proper place
+    const recordClone = await clone(
+      api,
+      mind,
+      origin.origin_url,
+      origin.origin_token,
+    );
+
+    const recordNew = { ...recordClone, mind };
+
+    await updateMind(api, recordNew);
+
+    // if there is no such mind
+    //if (mindExists === false) {
+    //} else {
+    //  // TODO if there is such remote, do nothing
+    //  // TODO if this is a new remote, ask user
+    //  // TODO if user rejects, do nothing
+    //  // TODO if user approves write new remote to mind
+    //}
+
+    // no need to write schema or init since clone has everything
+    return undefined;
   }
 
-  //await api.createLFS(mind);
+  if (isNew) {
+    try {
+      await updateMind(api, record);
+
+      // fails if exists
+      await api.gitinit(mind, name);
+
+      await api.csvsinit(mind);
+
+      //await api.createLFS(mind);
+    } catch (e) {
+      // EEXIST if repo is in fs but not root dataset
+      // should never happen
+      console.log(e);
+    }
+  } else {
+    console.log("repo exists, renaming");
+    await updateMind(api, record);
+
+    await api.rename(mind, name);
+  }
+
+  // extract schema record with trunks from branch records
+  const [schemaRecord, ...metaRecords] = extractSchemaRecords(record.branch);
 
   // write schema to mind
   await api.updateRecord(mind, schemaRecord);

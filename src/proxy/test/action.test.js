@@ -84,6 +84,7 @@ describe("changeMind", () => {
     const testCase = stub.cases.tags;
 
     clone.mockImplementation(() => ({ mind: 1 }));
+
     readSchema.mockImplementation(() => stub.schema);
 
     const api = { select: vi.fn(() => [testCase.record]) };
@@ -94,7 +95,12 @@ describe("changeMind", () => {
       `~=${testCase.url}&-=${testCase.token}&_=b`,
     );
 
-    expect(clone).toHaveBeenCalledWith(api, testCase.url, testCase.token);
+    expect(clone).toHaveBeenCalledWith(
+      api,
+      undefined,
+      testCase.url,
+      testCase.token,
+    );
 
     expect(mind).toStrictEqual(1);
 

@@ -70,8 +70,10 @@ describe("clone", () => {
     //  throw Error("");
     //});
 
+    const api = {};
+
     await expect(() =>
-      clone({}, testCase.url, testCase.token),
+      clone(api, undefined, testCase.url, testCase.token),
     ).rejects.toThrowError();
   });
 
@@ -87,7 +89,7 @@ describe("clone", () => {
 
     enrichBranchRecords.mockImplementation(() => testCase.branchRecords);
 
-    const result = await clone(api, testCase.url, testCase.token);
+    const result = await clone(api, undefined, testCase.url, testCase.token);
 
     expect(api.clone).toHaveBeenCalledWith(testCase.hash, {
       url: testCase.url,
@@ -96,7 +98,7 @@ describe("clone", () => {
 
     const c = {
       _: "mind",
-      mind: "id",
+      mind: testCase.hash,
       name: "name",
       branch: [
         {
@@ -120,6 +122,6 @@ describe("clone", () => {
       },
     };
 
-    expect(result.mind).toStrictEqual(c);
+    expect(result).toStrictEqual(c);
   });
 });

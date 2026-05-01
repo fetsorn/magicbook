@@ -63,8 +63,6 @@ describe("updateRecord", () => {
 
     await updateRecord(api, "root", record);
 
-    expect(updateMind).toHaveBeenCalledWith(api, record);
-
     expect(saveMindRecord).toHaveBeenCalledWith(api, record);
   });
 

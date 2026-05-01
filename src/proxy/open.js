@@ -3,8 +3,6 @@ import {
   schemaToBranchRecords,
   digestMessage,
 } from "@/proxy/pure.js";
-import { newUUID } from "@/proxy/record.js";
-import { saveMindRecord, updateMind } from "@/proxy/record.js";
 
 /**
  * This
@@ -38,18 +36,6 @@ export async function find(api, mind, name) {
   return { mind: mindRecord };
 }
 
-async function findMind(api, mind) {
-  const query = {
-    _: "mind",
-    mind,
-  };
-
-  // find mind in root folder
-  const mindRecords = await api.select("root", query);
-
-  return mindRecords !== undefined && mindRecords.length > 0;
-}
-
 /**
  * This
  * @name clone
@@ -60,12 +46,12 @@ async function findMind(api, mind) {
  * @param {String} token -
  * @returns {object}
  */
-export async function clone(api, url, token) {
+export async function clone(api, mind, url, token) {
   // if uri specifies a remote
   // try to clone remote
   // where mind string is a digest of remote
   // and mind name is uri-encoded remote
-  const mindRemote = await digestMessage(url);
+  const mindRemote = mind ?? (await digestMessage(url));
 
   await api.clone(mindRemote, { url, token });
 
@@ -85,15 +71,9 @@ export async function clone(api, url, token) {
     metaRecordsClone,
   );
 
-  // if repo has no uuid, create new mind
-  const mind = await newUUID();
-
-  // search root for mind
-  const mindExists = await findMind(api, mind);
-
   const recordClone = {
     _: "mind",
-    mind: mind,
+    mind: mindRemote,
     name: nameClone,
     branch: branchRecordsClone,
     origin_url: {
@@ -103,22 +83,5 @@ export async function clone(api, url, token) {
     },
   };
 
-  // if there is no such mind
-  if (mindExists === false) {
-    // clone mindRemote to mind and write to root
-    await api.rename(mind, mindRemote);
-
-    await updateMind(api, recordClone);
-
-    await saveMindRecord(api, recordClone);
-  } else {
-    // TODO if there is such remote, do nothing
-    // TODO if this is a new remote, ask user
-    // TODO if user rejects, do nothing
-    // TODO if user approves write new remote to mind
-  }
-
-  // TODO remove mindRemote
-
-  return { mind: recordClone };
+  return recordClone;
 }

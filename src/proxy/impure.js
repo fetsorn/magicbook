@@ -21,8 +21,6 @@ export async function updateRecord(api, mind, recordNew) {
   const canSaveMind = isHomeScreen && isMindBranch;
 
   if (canSaveMind) {
-    await updateMind(api, recordNew);
-
     await saveMindRecord(api, recordNew);
   } else {
     await updateEntry(api, mind, recordNew);

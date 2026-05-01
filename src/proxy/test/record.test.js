@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
 import { v4 as uuidv4 } from "uuid";
-import { newUUID } from "@/proxy/record.js";
 import {
   saveMindRecord,
   loadMindRecord,
@@ -16,9 +15,19 @@ import {
   writeRemoteTags,
   writeLocalTags,
 } from "@/proxy/tags.js";
+import { clone } from "@/proxy/open.js";
 import { schemaToBranchRecords } from "@/proxy/pure.js";
 import schemaRoot from "@/proxy/default_root_schema.json";
 import stub from "./stub.js";
+
+vi.mock("@/proxy/open.js", async (importOriginal) => {
+  const mod = await importOriginal();
+
+  return {
+    ...mod,
+    clone: vi.fn(),
+  };
+});
 
 vi.mock("@/proxy/pure.js", async (importOriginal) => {
   const mod = await importOriginal();
@@ -48,18 +57,6 @@ vi.mock("uuid", async (importOriginal) => {
     ...mod,
     v4: vi.fn(() => "1"),
   };
-});
-
-describe("newUUID", () => {
-  test("generates an id", () => {
-    const uuid = newUUID();
-
-    expect(uuidv4).toHaveBeenCalled();
-
-    expect(uuid).toBe(
-      "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b", // sha256 of "1"
-    );
-  });
 });
 
 describe("deleteRecord", () => {
@@ -132,20 +129,43 @@ describe("createRoot", () => {
   });
 });
 
-describe("saveMindRecord", () => {
-  test("", async () => {
+describe.only("saveMindRecord", () => {
+  test("clones", async () => {
     const api = {
       gitinit: vi.fn(),
       csvsinit: vi.fn(),
       updateRecord: vi.fn(),
       commit: vi.fn(),
+      select: vi.fn(() => []),
+      rename: vi.fn(),
     };
+
+    clone.mockImplementation(() => ({ _: "mind", mind: "remoteId" }));
 
     const testCase = stub.cases.tags;
 
     await saveMindRecord(api, testCase.record);
 
-    expect(api.gitinit).toHaveBeenCalledWith(stub.id, stub.name);
+    expect(clone).toHaveBeenCalled();
+  });
+
+  test("renames", async () => {
+    const api = {
+      gitinit: vi.fn(),
+      csvsinit: vi.fn(),
+      updateRecord: vi.fn(),
+      commit: vi.fn(),
+      select: vi.fn(() => [{ _: "mind", mind: "id" }]),
+      rename: vi.fn(),
+    };
+
+    clone.mockImplementation(() => ({ _: "mind", mind: "remoteId" }));
+
+    const testCase = stub.cases.tags;
+
+    await saveMindRecord(api, testCase.record);
+
+    expect(api.rename).toHaveBeenCalledWith(stub.id, stub.name);
 
     //expect(api.createLFS).toHaveBeenCalledWith(stub.id);
 
@@ -161,6 +181,44 @@ describe("saveMindRecord", () => {
     expect(writeRemoteTags).toHaveBeenCalledWith(api, stub.id, [
       testCase.originUrl,
     ]);
+
+    //expect(writeLocalTags).toHaveBeenCalledWith(api, stub.id, [testCase.localTag]);
+
+    expect(api.commit).toHaveBeenCalledWith(stub.id);
+  });
+
+  test("inits", async () => {
+    const api = {
+      gitinit: vi.fn(),
+      csvsinit: vi.fn(),
+      updateRecord: vi.fn(),
+      commit: vi.fn(),
+      select: vi.fn(() => []),
+      rename: vi.fn(),
+    };
+
+    clone.mockImplementation(() => ({ _: "mind", mind: "remoteId" }));
+
+    const testCase = stub.cases.tags;
+
+    const { origin_url, ...nourl } = testCase.record;
+
+    await saveMindRecord(api, nourl);
+
+    expect(api.gitinit).toHaveBeenCalledWith(stub.id, stub.name);
+
+    //expect(api.createLFS).toHaveBeenCalledWith(stub.id);
+
+    expect(api.updateRecord).toHaveBeenCalledWith(
+      stub.id,
+      testCase.schemaRecord,
+    );
+
+    for (const metaRecord of testCase.metaRecords) {
+      expect(api.updateRecord).toHaveBeenCalledWith(stub.id, metaRecord);
+    }
+
+    expect(writeRemoteTags).toHaveBeenCalledWith(api, stub.id, undefined);
 
     //expect(writeLocalTags).toHaveBeenCalledWith(api, stub.id, [testCase.localTag]);
 

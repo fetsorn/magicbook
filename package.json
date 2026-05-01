@@ -2,7 +2,7 @@
   "name": "@fetsorn/mindbook",
   "description": "SPARQL in plain text",
   "productName": "mindbook",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "type": "module",
   "files": ["dist"],
   "main": "./dist/mindbook.js",
