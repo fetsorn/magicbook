@@ -80,7 +80,7 @@ export function OverviewItemFull(props) {
           <Show when={canOpenMind} fallback={<></>}>
             <button
               title="open"
-              onClick={() => onAction({ api }, "open", props.item)}
+              onClick={() => onAction({ store, api }, "open", props.item)}
             >
               open{" "}
             </button>

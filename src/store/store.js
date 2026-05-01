@@ -31,6 +31,14 @@ export function makeStore() {
 export function openBook({ setStore }, content) {
   setStore(
     produce((state) => {
+      state.recordSet = [];
+      state.recordMap = {};
+      state.record = undefined;
+    }),
+  );
+
+  setStore(
+    produce((state) => {
       state.mind = content.mind;
       state.schema = content.schema;
       state.searchParams = content.searchParams;
@@ -555,7 +563,7 @@ export async function warp(context, branch, value, cognate) {
   await onSearch(context, store.schema[cognate].trunks[0], value);
 }
 
-export async function onAction({ api }, action, record) {
+export async function onAction({ store, api }, action, record) {
   const actionRecord = {
     _: "action",
     action,
